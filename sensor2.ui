@@ -177,7 +177,7 @@
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
-      <widget class="QRadioButton" name="radioButton_potentiometer">
+      <widget class="QRadioButton" name="radioButton_pot">
        <property name="font">
         <font>
          <pointsize>11</pointsize>
@@ -201,14 +201,14 @@
       </widget>
      </item>
      <item>
-      <widget class="QRadioButton" name="radioButton_ultrasound">
+      <widget class="QRadioButton" name="radioButton_ultrasonic">
        <property name="font">
         <font>
          <pointsize>11</pointsize>
         </font>
        </property>
        <property name="text">
-        <string>Ultrasound</string>
+        <string>Ultrasonic</string>
        </property>
       </widget>
      </item>

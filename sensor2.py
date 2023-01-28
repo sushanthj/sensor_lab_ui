@@ -32,7 +32,7 @@ class main(QMainWindow):
         self.radioButton_2 = self.findChild(QRadioButton, "radioButton_2")
 
         self.radioButton_potentiometer = self.findChild(QRadioButton, "radioButton_pot")
-        self.radioButton_sharp_ir = self.findChild(QRadioButton, "radioButton_sharp_ir")
+        self.radioButton_infrared = self.findChild(QRadioButton, "radioButton_infrared")
         self.radioButton_ultrasonic = self.findChild(QRadioButton, "radioButton_ultrasonic")
         self.radioButton_slot = self.findChild(QRadioButton, "radioButton_slot")
 
@@ -46,8 +46,13 @@ class main(QMainWindow):
         self.scene = QGraphicsScene()
 
         #set radio button state
-        self.radioButton_1.toggled.connect(lambda:self.btnstate(self.radioButton_1))
-        self.radioButton_2.toggled.connect(lambda:self.btnstate(self.radioButton_2))
+        self.radioButton_1.toggled.connect(lambda:self.modestate(self.radioButton_1))
+        self.radioButton_2.toggled.connect(lambda:self.modestate(self.radioButton_2))
+
+        self.radioButton_potentiometer.toggled.connect(lambda:self.sensorstate(self.radioButton_potentiometer))
+        self.radioButton_infrared.toggled.connect(lambda:self.sensorstate(self.radioButton_infrared))
+        self.radioButton_ultrasonic.toggled.connect(lambda:self.sensorstate(self.radioButton_ultrasonic))
+        self.radioButton_slot.toggled.connect(lambda:self.sensorstate(self.radioButton_slot))
 
         # Activated Filters
         self.pbar = self.findChild(QProgressBar, "progressBar")
@@ -58,6 +63,7 @@ class main(QMainWindow):
         # set defualt mode to GUI
         self.mode = "GUI Driven"
         # self.init_serial()
+        self.active_function = None
 
         self.xdata = list(range(100))  # 100 time points
         self.ydata = [random.randint(0,100) for _ in range(100)]
@@ -67,12 +73,13 @@ class main(QMainWindow):
         self.timer = QTimer()
         self.timer.setInterval(50)
         self.timer.timeout.connect(self.update_plot)
+        self.timer.timeout.connect(self.activate_function)
         self.timer.start()
 
 		# Show The App
         self.show()
 
-
+    #TODO: Remove this function after testing
     def update_plot(self):
         # Drop off the first y element, append a new one.
         self.ydata = self.ydata[1:] + [random.randint(0, 10)]
@@ -93,16 +100,19 @@ class main(QMainWindow):
 
             self.plot_object.setData(self.xdata, self.ydata)
 
+
+    def potentiometer_calc(self):
+        pass
+
     def init_serial(self):
-            self.ser = serial.Serial(
-                                    port='/dev/ttyACM0',
-                                    baudrate=9600
-                                    )
+        self.ser = serial.Serial(
+                                port='/dev/ttyACM0',
+                                baudrate=9600
+                                )
 
     # load folder and return list of projects(in sets of 7) to filter
     def test(self):
         if self.mode == "GUI Driven":
-
             print("RECEIVED USER INPUT")
             self.pbar.setValue(self.potentiometer_values[-1])
             self.port_switch("on")
@@ -113,14 +123,26 @@ class main(QMainWindow):
             self.potentiometer_values.reverse()
 
 
+    def activate_function(self):
+        if self.active_function == "Potentiometer":
+            self.potentiometer_calc()
+        elif self.active_function == "IR":
+            self.ir_calc()
+        elif self.active_function == "Ultrasonic":
+            self.ultrasonic_calc()
+        elif self.active_function == "Slot":
+            self.slot_calc()
+
+
     def port_switch(self, switch):
         if(self.ser.isOpen() == False and switch == "on"):
             self.ser.open()
         elif(self.ser.isOpen() == True and switch == "off"):
             self.ser.close()
 
+
     # monitor status of radiobutton and accordingly select project/json to load
-    def btnstate(self,b):
+    def modestate(self,b):
         if b.isChecked():
             self.statusBar_1.showMessage(b.text())
             self.mode = b.text()
@@ -128,6 +150,11 @@ class main(QMainWindow):
                 self.port_switch("on")
             elif self.mode == "Manual":
                 self.port_switch("off")
+
+
+    def sensorstate(self,button):
+        if button.isChecked():
+            self.active_function = button.text()
 
     # function to detect keyboard key press
     def keyPressEvent(self, event):
