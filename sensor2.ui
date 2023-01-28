@@ -18,9 +18,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>170</y>
+      <y>50</y>
       <width>251</width>
-      <height>201</height>
+      <height>121</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -56,8 +56,8 @@
    <widget class="QPushButton" name="pushButton_trial">
     <property name="geometry">
      <rect>
-      <x>292</x>
-      <y>465</y>
+      <x>332</x>
+      <y>475</y>
       <width>131</width>
       <height>41</height>
      </rect>
@@ -69,8 +69,8 @@
    <widget class="QProgressBar" name="progressBar">
     <property name="geometry">
      <rect>
-      <x>291</x>
-      <y>520</y>
+      <x>331</x>
+      <y>530</y>
       <width>201</width>
       <height>23</height>
      </rect>
@@ -83,10 +83,15 @@
     <property name="geometry">
      <rect>
       <x>55</x>
-      <y>138</y>
+      <y>18</y>
       <width>161</width>
       <height>21</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>Mode Selection</string>
@@ -95,12 +100,12 @@
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QGraphicsView" name="gv">
+   <widget class="PlotWidget" name="graphWidget">
     <property name="geometry">
      <rect>
-      <x>800</x>
+      <x>310</x>
       <y>20</y>
-      <width>411</width>
+      <width>701</width>
       <height>421</height>
      </rect>
     </property>
@@ -111,8 +116,8 @@
    <widget class="QLabel" name="label_prog_bar_name">
     <property name="geometry">
      <rect>
-      <x>280</x>
-      <y>550</y>
+      <x>320</x>
+      <y>560</y>
       <width>221</width>
       <height>20</height>
      </rect>
@@ -124,161 +129,11 @@
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QLabel" name="label_user_instructions">
-    <property name="geometry">
-     <rect>
-      <x>800</x>
-      <y>464</y>
-      <width>491</width>
-      <height>221</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>11</pointsize>
-     </font>
-    </property>
-    <property name="frameShape">
-     <enum>QFrame::Box</enum>
-    </property>
-    <property name="text">
-     <string>User Instructions</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignHCenter|Qt::AlignTop</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>810</x>
-      <y>504</y>
-      <width>471</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>10</pointsize>
-     </font>
-    </property>
-    <property name="text">
-     <string>1. By Default Image path is taken to be on same level as annotation projects</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_2">
-    <property name="geometry">
-     <rect>
-      <x>810</x>
-      <y>561</y>
-      <width>421</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>10</pointsize>
-     </font>
-    </property>
-    <property name="text">
-     <string>3. Click 'Open Annotation JSONS' to load all annotation projects</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_3">
-    <property name="geometry">
-     <rect>
-      <x>810</x>
-      <y>591</y>
-      <width>441</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>10</pointsize>
-     </font>
-    </property>
-    <property name="text">
-     <string>4. Click on 'Load jsons from temp&quot; after projects have been loaded</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_4">
-    <property name="geometry">
-     <rect>
-      <x>810</x>
-      <y>621</y>
-      <width>421</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>10</pointsize>
-     </font>
-    </property>
-    <property name="text">
-     <string>5. Left click to remove boxes</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_5">
-    <property name="geometry">
-     <rect>
-      <x>810</x>
-      <y>651</y>
-      <width>421</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>10</pointsize>
-     </font>
-    </property>
-    <property name="text">
-     <string>6. Right click to retrieve boxes and show box attributes</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_6">
-    <property name="geometry">
-     <rect>
-      <x>810</x>
-      <y>530</y>
-      <width>471</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>10</pointsize>
-     </font>
-    </property>
-    <property name="text">
-     <string>2. If required, give Image path by pressing the 'Image Location' button</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_trial">
     <property name="geometry">
      <rect>
-      <x>450</x>
-      <y>480</y>
+      <x>490</x>
+      <y>490</y>
       <width>241</width>
       <height>16</height>
      </rect>
@@ -286,6 +141,90 @@
     <property name="text">
      <string>Serial Input: </string>
     </property>
+   </widget>
+   <widget class="QLabel" name="label_proj_heading_2">
+    <property name="geometry">
+     <rect>
+      <x>55</x>
+      <y>218</y>
+      <width>161</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Sensor Selection</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QFrame" name="verticalFrame_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>250</y>
+      <width>251</width>
+      <height>331</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Box</enum>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QRadioButton" name="radioButton_potentiometer">
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Potentiometer</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="radioButton_infrared">
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>IR</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="radioButton_ultrasound">
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Ultrasound</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="radioButton_slot">
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Slot</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -403,6 +342,13 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PlotWidget</class>
+   <extends>QGraphicsView</extends>
+   <header location="global">pyqtgraph</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

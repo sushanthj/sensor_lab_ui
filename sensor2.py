@@ -1,11 +1,4 @@
-from enum import Flag
-from hashlib import new
-import sys, os
-import shutil
-import glob
-import re
-import filecmp
-import threading
+import sys
 from PyQt5.uic.uiparser import QtCore
 import cv2
 import qimage2ndarray
@@ -20,6 +13,10 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 import serial
+from pyqtgraph import PlotWidget, plot
+import pyqtgraph as pg
+import random
+
 
 class main(QMainWindow):
     def __init__(self):
@@ -46,8 +43,6 @@ class main(QMainWindow):
 		# Click-detection to open file explorer Box
         self.button_trial.clicked.connect(self.test)
 
-        self.gv = self.findChild(QGraphicsView, "gv")
-        self.gv.setMouseTracking(False)
         self.scene = QGraphicsScene()
 
         #set radio button state
@@ -62,10 +57,41 @@ class main(QMainWindow):
 
         # set defualt mode to GUI
         self.mode = "GUI Driven"
-        self.init_serial()
+        # self.init_serial()
+
+        self.xdata = list(range(100))  # 100 time points
+        self.ydata = [random.randint(0,100) for _ in range(100)]
+        self.plot_object = None
+        self.update_plot()
+
+        self.timer = QTimer()
+        self.timer.setInterval(50)
+        self.timer.timeout.connect(self.update_plot)
+        self.timer.start()
 
 		# Show The App
         self.show()
+
+
+    def update_plot(self):
+        # Drop off the first y element, append a new one.
+        self.ydata = self.ydata[1:] + [random.randint(0, 10)]
+        color = self.palette().color(QPalette.Window)  # Get the default window background,
+        pen = pg.mkPen(color=(255, 0, 0))
+
+        if self.plot_object is None:
+            self.graphWidget.setBackground(color)
+            self.graphWidget.setLabel('left', 'Temperature (°C)')
+            self.graphWidget.setLabel('bottom', 'Hour (H)')
+            self.plot_object = self.graphWidget.plot(self.xdata, self.ydata, pen=pen)
+        else:
+            self.xdata = self.xdata[1:]  # Remove the first y element.
+            self.xdata.append(self.xdata[-1] + 1)  # Add a new value 1 higher than the last.
+
+            self.ydata = self.ydata[1:]  # Remove the first
+            self.ydata.append(random.randint(0,100))  # Add a new random value.
+
+            self.plot_object.setData(self.xdata, self.ydata)
 
     def init_serial(self):
             self.ser = serial.Serial(
@@ -76,6 +102,7 @@ class main(QMainWindow):
     # load folder and return list of projects(in sets of 7) to filter
     def test(self):
         if self.mode == "GUI Driven":
+
             print("RECEIVED USER INPUT")
             self.pbar.setValue(self.potentiometer_values[-1])
             self.port_switch("on")
