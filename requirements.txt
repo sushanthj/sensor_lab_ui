@@ -1,3 +1,4 @@
-qimage2ndarray
 PyQt5
 opencv-python==4.3.0.36
+pyqtgraph
+qt5-tools
