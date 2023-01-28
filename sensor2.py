@@ -65,10 +65,10 @@ class main(QMainWindow):
         # self.init_serial()
         self.active_function = None
 
-        self.xdata = list(range(100))  # 100 time points
-        self.ydata = [random.randint(0,100) for _ in range(100)]
+        self.plot_cache_length = 100
+        self.xdata = [0,0]
+        self.ydata = [0,0]
         self.plot_object = None
-        self.update_plot()
 
         self.timer = QTimer()
         self.timer.setInterval(50)
@@ -80,7 +80,7 @@ class main(QMainWindow):
         self.show()
 
     #TODO: Remove this function after testing
-    def update_plot(self):
+    def update_plot(self,y_axis_label, x_axis_label, new_y):
         # Drop off the first y element, append a new one.
         self.ydata = self.ydata[1:] + [random.randint(0, 10)]
         color = self.palette().color(QPalette.Window)  # Get the default window background,
@@ -88,21 +88,25 @@ class main(QMainWindow):
 
         if self.plot_object is None:
             self.graphWidget.setBackground(color)
-            self.graphWidget.setLabel('left', 'Temperature (°C)')
-            self.graphWidget.setLabel('bottom', 'Hour (H)')
+            self.graphWidget.setLabel('left', y_axis_label)
+            self.graphWidget.setLabel('bottom', x_axis_label)
             self.plot_object = self.graphWidget.plot(self.xdata, self.ydata, pen=pen)
         else:
-            self.xdata = self.xdata[1:]  # Remove the first y element.
-            self.xdata.append(self.xdata[-1] + 1)  # Add a new value 1 higher than the last.
+            if len(self.xdata) > self.plot_cache_length:
+                # clear graph after reaching max_length
+                self.xdata = self.xdata[1:]
+                self.ydata = self.ydata[1:]
 
-            self.ydata = self.ydata[1:]  # Remove the first
-            self.ydata.append(random.randint(0,100))  # Add a new random value.
+            self.xdata.append(self.xdata[-1] + 1)  # Add a new value 1 higher than the last.
+            self.ydata.append(new_y)  # Add a new random value.
 
             self.plot_object.setData(self.xdata, self.ydata)
 
 
     def potentiometer_calc(self):
-        pass
+        input = self.ser.read(10)
+        self.ser.flush()
+        self.trial_label.setText(str(input))
 
     def init_serial(self):
         self.ser = serial.Serial(
@@ -118,20 +122,23 @@ class main(QMainWindow):
             self.port_switch("on")
             input = self.ser.read(10)
             self.ser.flush()
+            input = input*(5/255)
             self.trial_label.setText(str(input))
             # self.ser.write(b'1234')
             self.potentiometer_values.reverse()
 
 
     def activate_function(self):
-        if self.active_function == "Potentiometer":
-            self.potentiometer_calc()
-        elif self.active_function == "IR":
-            self.ir_calc()
-        elif self.active_function == "Ultrasonic":
-            self.ultrasonic_calc()
-        elif self.active_function == "Slot":
-            self.slot_calc()
+        if self.mode == "GUI Driven":
+            self.port_switch("on")
+            if self.active_function == "Potentiometer":
+                self.potentiometer_calc()
+            elif self.active_function == "IR":
+                self.ir_calc()
+            elif self.active_function == "Ultrasonic":
+                self.ultrasonic_calc()
+            elif self.active_function == "Slot":
+                self.slot_calc()
 
 
     def port_switch(self, switch):
