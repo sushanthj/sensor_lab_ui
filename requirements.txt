@@ -1,0 +1,3 @@
+qimage2ndarray
+PyQt5
+opencv-python==4.3.0.36
