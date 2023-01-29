@@ -16,6 +16,7 @@ import serial
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
 import random
+from ast import literal_eval
 
 
 class main(QMainWindow):
@@ -61,18 +62,18 @@ class main(QMainWindow):
         self.statusBar_1.setFont(QFont('Helvetica',13))
 
         # set defualt mode to GUI
-        self.mode = "GUI Driven"
-        # self.init_serial()
+        self.mode = "Read Sensor Data"
+        self.init_serial()
         self.active_function = None
 
         self.plot_cache_length = 100
-        self.xdata = [0,0]
-        self.ydata = [0,0]
+        self.xdata = [0]
+        self.ydata = [0]
         self.plot_object = None
 
         self.timer = QTimer()
-        self.timer.setInterval(50)
-        self.timer.timeout.connect(self.update_plot)
+        self.timer.setInterval(10)
+        # self.timer.timeout.connect(self.update_plot)
         self.timer.timeout.connect(self.activate_function)
         self.timer.start()
 
@@ -80,33 +81,35 @@ class main(QMainWindow):
         self.show()
 
     #TODO: Remove this function after testing
-    def update_plot(self,y_axis_label, x_axis_label, new_y):
-        # Drop off the first y element, append a new one.
-        self.ydata = self.ydata[1:] + [random.randint(0, 10)]
+    def update_plot(self,y_axis_label, x_axis_label, x_range, y_range, new_y):
         color = self.palette().color(QPalette.Window)  # Get the default window background,
         pen = pg.mkPen(color=(255, 0, 0))
 
         if self.plot_object is None:
+            print("Creating plot object")
             self.graphWidget.setBackground(color)
             self.graphWidget.setLabel('left', y_axis_label)
             self.graphWidget.setLabel('bottom', x_axis_label)
+            # self.graphWidget.setXRange(0, x_range, padding=0)
+            self.graphWidget.setYRange(0, y_range, padding=0)
             self.plot_object = self.graphWidget.plot(self.xdata, self.ydata, pen=pen)
         else:
-            if len(self.xdata) > self.plot_cache_length:
+            if len(self.xdata) > self.plot_cache_length and len(self.ydata) > self.plot_cache_length:
                 # clear graph after reaching max_length
                 self.xdata = self.xdata[1:]
                 self.ydata = self.ydata[1:]
 
             self.xdata.append(self.xdata[-1] + 1)  # Add a new value 1 higher than the last.
             self.ydata.append(new_y)  # Add a new random value.
-
             self.plot_object.setData(self.xdata, self.ydata)
 
 
     def potentiometer_calc(self):
-        input = self.ser.read(10)
+        input = int.from_bytes(self.ser.read(), byteorder="little")
         self.ser.flush()
-        self.trial_label.setText(str(input))
+        input_scaled = input*(5/255)
+        self.update_plot(y_axis_label="voltage", x_axis_label="samples",
+                         x_range=100, y_range=7 ,new_y=input_scaled)
 
     def init_serial(self):
         self.ser = serial.Serial(
@@ -116,20 +119,20 @@ class main(QMainWindow):
 
     # load folder and return list of projects(in sets of 7) to filter
     def test(self):
-        if self.mode == "GUI Driven":
+        if self.mode == "Read Sensor Data":
             print("RECEIVED USER INPUT")
             self.pbar.setValue(self.potentiometer_values[-1])
-            self.port_switch("on")
-            input = self.ser.read(10)
-            self.ser.flush()
+            # self.port_switch("on")
+            input = int.from_bytes(self.ser.read(), byteorder="little")
             input = input*(5/255)
+            # self.ser.flush()
             self.trial_label.setText(str(input))
             # self.ser.write(b'1234')
             self.potentiometer_values.reverse()
 
 
     def activate_function(self):
-        if self.mode == "GUI Driven":
+        if self.mode == "Read Sensor Data":
             self.port_switch("on")
             if self.active_function == "Potentiometer":
                 self.potentiometer_calc()
@@ -139,6 +142,9 @@ class main(QMainWindow):
                 self.ultrasonic_calc()
             elif self.active_function == "Slot":
                 self.slot_calc()
+        #TODO: Not sure about this
+        else:
+            self.active_function = "Motor Control"
 
 
     def port_switch(self, switch):
@@ -148,19 +154,31 @@ class main(QMainWindow):
             self.ser.close()
 
 
+    def clear_plot(self):
+        self.graphWidget.clear()
+        self.plot_object = None
+        self.xdata = [0]
+        self.ydata = [0]
+        self.ser.flush()
+
+
     # monitor status of radiobutton and accordingly select project/json to load
     def modestate(self,b):
         if b.isChecked():
             self.statusBar_1.showMessage(b.text())
             self.mode = b.text()
-            if self.mode == "GUI Driven":
+            if self.mode == "Read Sensor Data":
                 self.port_switch("on")
-            elif self.mode == "Manual":
+            elif self.mode == "Control Actuators":
+                self.clear_plot()
+                self.port_switch("on")
+            else:
                 self.port_switch("off")
 
 
     def sensorstate(self,button):
         if button.isChecked():
+            self.clear_plot()
             self.active_function = button.text()
 
     # function to detect keyboard key press
@@ -171,7 +189,7 @@ class main(QMainWindow):
     # function to save curr proj before closing
     def closeEvent(self, event):
         self.ser.close()
-        print("closing Tool")
+        print("Closing Tool")
         event.accept()
 
 

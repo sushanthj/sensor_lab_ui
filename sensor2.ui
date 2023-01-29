@@ -35,7 +35,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Manual</string>
+        <string>Read Sensor Data</string>
        </property>
       </widget>
      </item>
@@ -47,7 +47,7 @@
         </font>
        </property>
        <property name="text">
-        <string>GUI Driven</string>
+        <string>Control Actuators</string>
        </property>
       </widget>
      </item>
