@@ -252,7 +252,7 @@
     <property name="geometry">
      <rect>
       <x>460</x>
-      <y>820</y>
+      <y>824</y>
       <width>181</width>
       <height>51</height>
      </rect>
@@ -265,7 +265,7 @@
     <property name="geometry">
      <rect>
       <x>510</x>
-      <y>890</y>
+      <y>894</y>
       <width>91</width>
       <height>16</height>
      </rect>
@@ -278,7 +278,7 @@
     <property name="geometry">
      <rect>
       <x>940</x>
-      <y>820</y>
+      <y>824</y>
       <width>181</width>
       <height>51</height>
      </rect>
@@ -291,7 +291,7 @@
     <property name="geometry">
      <rect>
       <x>990</x>
-      <y>890</y>
+      <y>894</y>
       <width>91</width>
       <height>16</height>
      </rect>
@@ -304,7 +304,7 @@
     <property name="geometry">
      <rect>
       <x>1420</x>
-      <y>820</y>
+      <y>824</y>
       <width>181</width>
       <height>51</height>
      </rect>
@@ -327,7 +327,7 @@
     <property name="geometry">
      <rect>
       <x>1460</x>
-      <y>890</y>
+      <y>894</y>
       <width>111</width>
       <height>16</height>
      </rect>
@@ -340,7 +340,7 @@
     <property name="geometry">
      <rect>
       <x>340</x>
-      <y>410</y>
+      <y>414</y>
       <width>411</width>
       <height>331</height>
      </rect>
@@ -350,17 +350,17 @@
     <property name="geometry">
      <rect>
       <x>820</x>
-      <y>410</y>
+      <y>414</y>
       <width>411</width>
       <height>331</height>
      </rect>
     </property>
    </widget>
-   <widget class="PlotWidget" name="graphMotor_stepper">
+   <widget class="PlotWidget" name="graphWidget_stepper">
     <property name="geometry">
      <rect>
       <x>1300</x>
-      <y>410</y>
+      <y>414</y>
       <width>411</width>
       <height>331</height>
      </rect>
@@ -370,7 +370,7 @@
     <property name="geometry">
      <rect>
       <x>930</x>
-      <y>320</y>
+      <y>328</y>
       <width>181</width>
       <height>16</height>
      </rect>
@@ -398,7 +398,7 @@
     <property name="geometry">
      <rect>
       <x>460</x>
-      <y>750</y>
+      <y>754</y>
       <width>181</width>
       <height>16</height>
      </rect>
@@ -427,7 +427,7 @@
     <property name="geometry">
      <rect>
       <x>930</x>
-      <y>750</y>
+      <y>754</y>
       <width>181</width>
       <height>16</height>
      </rect>
@@ -455,7 +455,7 @@
     <property name="geometry">
      <rect>
       <x>1420</x>
-      <y>750</y>
+      <y>754</y>
       <width>181</width>
       <height>16</height>
      </rect>

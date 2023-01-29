@@ -18,6 +18,8 @@ import pyqtgraph as pg
 import random
 from ast import literal_eval
 
+DEVICE_PORT = '/dev/ttyACM0'
+BAUD_RATE = 9600
 
 class main(QMainWindow):
     def __init__(self):
@@ -70,7 +72,14 @@ class main(QMainWindow):
 
         # set defualt mode to Read sensor data (optional)
         self.mode = "Read Sensor Data"
-        self.init_serial()
+        # initilaize the Aruduino's Serial Port
+        try:
+            self.init_serial()
+        except serial.SerialException:
+            print("NO ARDUINO DETECTED")
+            print("Please connect the Arduino and ensure the Port and Baud Rates are correct")
+            exit()
+
         self.active_function = None
 
         self.init_data_holders()
@@ -85,6 +94,12 @@ class main(QMainWindow):
 
 		# Show The App
         self.show()
+
+    def init_serial(self):
+        self.ser = serial.Serial(
+                                port=DEVICE_PORT,
+                                baudrate=BAUD_RATE
+                                )
 
 
     def init_data_holders(self):
@@ -101,6 +116,9 @@ class main(QMainWindow):
         self.plot_object_motor = None
         self.plot_object_servo = None
         self.plot_object_stepper = None
+        self.update_plot(y_axis_label="voltage", x_axis_label="samples",
+                         x_range=100, y_range=7 ,new_y=0)
+        self.update_plot_actuators(new_y_motor=0, new_y_servo=0, new_y_stepper=0)
 
 
     #TODO: Remove this function after testing
@@ -202,12 +220,6 @@ class main(QMainWindow):
     def stepper_write(self):
         pass
 
-    def init_serial(self):
-        self.ser = serial.Serial(
-                                port='/dev/ttyACM0',
-                                baudrate=9600
-                                )
-
     # load folder and return list of projects(in sets of 7) to filter
     def test(self):
         if self.mode == "Read Sensor Data":
@@ -233,7 +245,7 @@ class main(QMainWindow):
                 self.ultrasonic_calc()
             elif self.active_function == "Slot":
                 self.slot_calc()
-        #TODO: Not sure about this
+
         elif self.mode == "Control Actuators":
             self.motor_servo_stepper_read()
 
