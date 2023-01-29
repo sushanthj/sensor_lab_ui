@@ -37,16 +37,21 @@ class main(QMainWindow):
         self.radioButton_ultrasonic = self.findChild(QRadioButton, "radioButton_ultrasonic")
         self.radioButton_slot = self.findChild(QRadioButton, "radioButton_slot")
 
+        self.motor_slider = self.findChild(QSlider, "slider_motor")
+        self.motor_servo = self.findChild(QSlider, "slider_servo")
+        self.motor_stepper = self.findChild(QSlider, "slider_stepper")
+        self.motor_stepper.setValue(50)
+
+		# trial stuff
+        self.potentiometer_values = [0,100]
         self.potentiometer_label = self.findChild(QLabel, "label_potentiometer")
         self.trial_label = self.findChild(QLabel, "label_trial")
-        self.potentiometer_values = [0,100]
-
-		# Click-detection to open file explorer Box
-        self.button_trial.clicked.connect(self.test)
 
         self.scene = QGraphicsScene()
 
-        #set radio button state
+        # set button connections
+        self.button_trial.clicked.connect(self.test)
+
         self.radioButton_1.toggled.connect(lambda:self.modestate(self.radioButton_1))
         self.radioButton_2.toggled.connect(lambda:self.modestate(self.radioButton_2))
 
@@ -55,30 +60,48 @@ class main(QMainWindow):
         self.radioButton_ultrasonic.toggled.connect(lambda:self.sensorstate(self.radioButton_ultrasonic))
         self.radioButton_slot.toggled.connect(lambda:self.sensorstate(self.radioButton_slot))
 
-        # Activated Filters
+        self.motor_slider.sliderReleased.connect(lambda:self.motor_write)
+
+        # Activate toolbars
         self.pbar = self.findChild(QProgressBar, "progressBar")
         self.statusBar_1 = self.findChild(QStatusBar, "statusbar")
         main.setStatusBar(self, self.statusBar_1)
         self.statusBar_1.setFont(QFont('Helvetica',13))
 
-        # set defualt mode to GUI
+        # set defualt mode to Read sensor data (optional)
         self.mode = "Read Sensor Data"
         self.init_serial()
         self.active_function = None
 
-        self.plot_cache_length = 100
-        self.xdata = [0]
-        self.ydata = [0]
-        self.plot_object = None
+        self.init_data_holders()
+        # set the default mode to read
+        self.read_write_lock = "read"
 
+        # the de-facto main loop of the program which keeps calling the activated function
         self.timer = QTimer()
         self.timer.setInterval(10)
-        # self.timer.timeout.connect(self.update_plot)
         self.timer.timeout.connect(self.activate_function)
         self.timer.start()
 
 		# Show The App
         self.show()
+
+
+    def init_data_holders(self):
+        self.plot_cache_length = 100
+        self.xdata = [0]
+        self.ydata = [0]
+        self.xdata_motor = [0]
+        self.ydata_motor = [0]
+        self.xdata_servo = [0]
+        self.ydata_servo = [0]
+        self.xdata_stepper = [0]
+        self.ydata_stepper = [0]
+        self.plot_object = None
+        self.plot_object_motor = None
+        self.plot_object_servo = None
+        self.plot_object_stepper = None
+
 
     #TODO: Remove this function after testing
     def update_plot(self,y_axis_label, x_axis_label, x_range, y_range, new_y):
@@ -100,16 +123,84 @@ class main(QMainWindow):
                 self.ydata = self.ydata[1:]
 
             self.xdata.append(self.xdata[-1] + 1)  # Add a new value 1 higher than the last.
-            self.ydata.append(new_y)  # Add a new random value.
+            self.ydata.append(new_y)  # Add a new vales to end of ydata list
             self.plot_object.setData(self.xdata, self.ydata)
 
 
-    def potentiometer_calc(self):
+    def update_plot_actuators(self, new_y_motor, new_y_servo, new_y_stepper):
+        color = self.palette().color(QPalette.Window)  # Get the default window background,
+        pen = pg.mkPen(color=(255, 0, 0))
+
+        #TODO: Change xdata and ydata
+        if self.plot_object_motor is None and self.plot_object_servo is None and self.plot_object_stepper is None:
+            print("Creating plot object for motor")
+            self.graphWidget_motor.setBackground(color)
+            self.graphWidget_motor.setLabel('left', 'RPM')
+            self.graphWidget_motor.setLabel('bottom', 'samples')
+            self.graphWidget_motor.setYRange(0, 100, padding=0)
+            self.plot_object_motor = self.graphWidget_motor.plot(self.xdata_motor, self.ydata_motor, pen=pen)
+
+            print("Creating plot object for servo")
+            self.graphWidget_servo.setBackground(color)
+            self.graphWidget_servo.setLabel('left', 'Angle (Degrees)')
+            self.graphWidget_servo.setLabel('bottom', 'samples')
+            self.graphWidget_servo.setYRange(0, 100, padding=0)
+            self.plot_object_servo = self.graphWidget_servo.plot(self.xdata_servo, self.ydata_servo, pen=pen)
+
+            print("Creating plot object for stepper")
+            self.graphWidget_stepper.setBackground(color)
+            self.graphWidget_stepper.setLabel('left', 'Angle (Degrees)')
+            self.graphWidget_stepper.setLabel('bottom', 'samples')
+            self.graphWidget_stepper.setYRange(0, 100, padding=0)
+            self.plot_object_stepper = self.graphWidget_stepper.plot(self.xdata_stepper, self.ydata_stepper, pen=pen)
+
+        else:
+            if len(self.xdata_motor) > self.plot_cache_length:
+                # clear graph after reaching max_length
+                self.xdata_motor = self.xdata_motor[1:]
+                self.ydata_motor = self.ydata_motor[1:]
+                self.xdata_servo = self.xdata_servo[1:]
+                self.ydata_servo = self.ydata_servo[1:]
+                self.xdata_stepper = self.xdata_stepper[1:]
+                self.ydata_stepper = self.ydata_stepper[1:]
+
+            # add new data to end of the ydata list
+            self.xdata_motor.append(self.xdata_motor[-1] + 1)
+            self.xdata_servo.append(self.xdata_servo[-1] + 1)
+            self.xdata_stepper.append(self.xdata_stepper[-1] + 1)  # Add a new value 1 higher than the last.
+            self.ydata_motor.append(new_y_motor)
+            self.ydata_servo.append(new_y_servo)
+            self.ydata_stepper.append(new_y_stepper)
+
+            self.plot_object_motor.setData(self.xdata_motor, self.ydata_motor)
+            self.plot_object_servo.setData(self.xdata_servo, self.ydata_servo)
+            self.plot_object_stepper.setData(self.xdata_stepper, self.ydata_stepper)
+
+
+    def potentiometer_read(self):
         input = int.from_bytes(self.ser.read(), byteorder="little")
         self.ser.flush()
         input_scaled = input*(5/255)
         self.update_plot(y_axis_label="voltage", x_axis_label="samples",
                          x_range=100, y_range=7 ,new_y=input_scaled)
+
+
+    def motor_servo_stepper_read(self):
+        input = int.from_bytes(self.ser.read(), byteorder="little")
+        self.ser.flush()
+        input_scaled = input*(5/255)
+        #TODO: Pass the right values to each of new_y_*
+        self.update_plot_actuators(new_y_motor=input_scaled, new_y_servo=input_scaled, new_y_stepper=input_scaled)
+
+
+    def motor_write(self):
+        pass
+
+    def servo_write(self):
+        pass
+
+    def stepper_write(self):
+        pass
 
     def init_serial(self):
         self.ser = serial.Serial(
@@ -135,7 +226,7 @@ class main(QMainWindow):
         if self.mode == "Read Sensor Data":
             self.port_switch("on")
             if self.active_function == "Potentiometer":
-                self.potentiometer_calc()
+                self.potentiometer_read()
             elif self.active_function == "IR":
                 self.ir_calc()
             elif self.active_function == "Ultrasonic":
@@ -143,8 +234,8 @@ class main(QMainWindow):
             elif self.active_function == "Slot":
                 self.slot_calc()
         #TODO: Not sure about this
-        else:
-            self.active_function = "Motor Control"
+        elif self.mode == "Control Actuators":
+            self.motor_servo_stepper_read()
 
 
     def port_switch(self, switch):
@@ -156,9 +247,10 @@ class main(QMainWindow):
 
     def clear_plot(self):
         self.graphWidget.clear()
-        self.plot_object = None
-        self.xdata = [0]
-        self.ydata = [0]
+        self.graphWidget_motor.clear()
+        self.graphWidget_servo.clear()
+        self.graphWidget_stepper.clear()
+        self.init_data_holders()
         self.ser.flush()
 
 
@@ -167,13 +259,8 @@ class main(QMainWindow):
         if b.isChecked():
             self.statusBar_1.showMessage(b.text())
             self.mode = b.text()
-            if self.mode == "Read Sensor Data":
-                self.port_switch("on")
-            elif self.mode == "Control Actuators":
-                self.clear_plot()
-                self.port_switch("on")
-            else:
-                self.port_switch("off")
+            self.clear_plot()
+            self.port_switch("on")
 
 
     def sensorstate(self,button):
