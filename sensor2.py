@@ -73,12 +73,12 @@ class main(QMainWindow):
         # set defualt mode to Read sensor data (optional)
         self.mode = "Read Sensor Data"
         # initilaize the Aruduino's Serial Port
-        try:
-            self.init_serial()
-        except serial.SerialException:
-            print("NO ARDUINO DETECTED")
-            print("Please connect the Arduino and ensure the Port and Baud Rates are correct")
-            exit()
+        # try:
+        #     self.init_serial()
+        # except serial.SerialException:
+        #     print("NO ARDUINO DETECTED")
+        #     print("Please connect the Arduino and ensure the Port and Baud Rates are correct")
+        #     exit()
 
         self.active_function = None
 
@@ -124,7 +124,7 @@ class main(QMainWindow):
     #TODO: Remove this function after testing
     def update_plot(self,y_axis_label, x_axis_label, x_range, y_range, new_y):
         color = self.palette().color(QPalette.Window)  # Get the default window background,
-        pen = pg.mkPen(color=(255, 0, 0))
+        pen = pg.mkPen(color=(255, 0, 0), width=3)
 
         if self.plot_object is None:
             print("Creating plot object")
@@ -133,6 +133,7 @@ class main(QMainWindow):
             self.graphWidget.setLabel('bottom', x_axis_label)
             # self.graphWidget.setXRange(0, x_range, padding=0)
             self.graphWidget.setYRange(0, y_range, padding=0)
+            self.graphWidget.showGrid(x=True, y=True)
             self.plot_object = self.graphWidget.plot(self.xdata, self.ydata, pen=pen)
         else:
             if len(self.xdata) > self.plot_cache_length and len(self.ydata) > self.plot_cache_length:
@@ -147,7 +148,7 @@ class main(QMainWindow):
 
     def update_plot_actuators(self, new_y_motor, new_y_servo, new_y_stepper):
         color = self.palette().color(QPalette.Window)  # Get the default window background,
-        pen = pg.mkPen(color=(255, 0, 0))
+        pen = pg.mkPen(color=(255, 0, 0), width=3)
 
         #TODO: Change xdata and ydata
         if self.plot_object_motor is None and self.plot_object_servo is None and self.plot_object_stepper is None:
@@ -156,6 +157,7 @@ class main(QMainWindow):
             self.graphWidget_motor.setLabel('left', 'RPM')
             self.graphWidget_motor.setLabel('bottom', 'samples')
             self.graphWidget_motor.setYRange(0, 100, padding=0)
+            self.graphWidget_motor.showGrid(x=True, y=True)
             self.plot_object_motor = self.graphWidget_motor.plot(self.xdata_motor, self.ydata_motor, pen=pen)
 
             print("Creating plot object for servo")
@@ -163,6 +165,7 @@ class main(QMainWindow):
             self.graphWidget_servo.setLabel('left', 'Angle (Degrees)')
             self.graphWidget_servo.setLabel('bottom', 'samples')
             self.graphWidget_servo.setYRange(0, 100, padding=0)
+            self.graphWidget_servo.showGrid(x=True, y=True)
             self.plot_object_servo = self.graphWidget_servo.plot(self.xdata_servo, self.ydata_servo, pen=pen)
 
             print("Creating plot object for stepper")
@@ -170,6 +173,7 @@ class main(QMainWindow):
             self.graphWidget_stepper.setLabel('left', 'Angle (Degrees)')
             self.graphWidget_stepper.setLabel('bottom', 'samples')
             self.graphWidget_stepper.setYRange(0, 100, padding=0)
+            self.graphWidget_stepper.showGrid(x=True, y=True)
             self.plot_object_stepper = self.graphWidget_stepper.plot(self.xdata_stepper, self.ydata_stepper, pen=pen)
 
         else:
@@ -235,7 +239,12 @@ class main(QMainWindow):
 
 
     def activate_function(self):
-        if self.mode == "Read Sensor Data":
+        """
+        Calls all functions whcih read data from serial buffer
+        Note. This uses the class attribure self.read_write_lock to prevent child
+              functions from accessing the serial buffer when something is being written
+        """
+        if self.mode == "Read Sensor Data" and self.read_write_lock == "read":
             self.port_switch("on")
             if self.active_function == "Potentiometer":
                 self.potentiometer_read()
@@ -246,7 +255,7 @@ class main(QMainWindow):
             elif self.active_function == "Slot":
                 self.slot_calc()
 
-        elif self.mode == "Control Actuators":
+        elif self.mode == "Control Actuators" and self.read_write_lock == "read":
             self.motor_servo_stepper_read()
 
 
