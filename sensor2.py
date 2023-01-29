@@ -15,6 +15,8 @@ import time
 
 DEVICE_PORT = '/dev/ttyACM0'
 BAUD_RATE = 9600
+PROJECT_TITLE = 'Sensors and Motors Lab - Team H'
+RECEIVE_INPUT_WAIT_TIME = 0.05 # seconds
 
 class main(QMainWindow):
     def __init__(self):
@@ -23,8 +25,10 @@ class main(QMainWindow):
 		# Load the ui file
         uic.loadUi("sensor2.ui", self)
 
+        self.setWindowTitle(PROJECT_TITLE)
+
 		# Define our widgets
-        self.button_trial = self.findChild(QPushButton, "pushButton_trial")
+        self.button_clear_selections = self.findChild(QPushButton, "pushButton_clear_graphs")
 
         self.radioButton_1 = self.findChild(QRadioButton, "radioButton_1")
         self.radioButton_2 = self.findChild(QRadioButton, "radioButton_2")
@@ -47,7 +51,7 @@ class main(QMainWindow):
         self.scene = QGraphicsScene()
 
         # set button connections
-        self.button_trial.clicked.connect(self.test)
+        self.button_clear_selections.clicked.connect(self.clear_selections)
 
         self.radioButton_1.toggled.connect(lambda:self.modestate(self.radioButton_1))
         self.radioButton_2.toggled.connect(lambda:self.modestate(self.radioButton_2))
@@ -82,11 +86,12 @@ class main(QMainWindow):
         self.init_data_holders()
         # set the default mode to read
         self.read_write_lock = "read"
+        pg.setConfigOptions(antialias=True)
 
         # the de-facto main loop of the program which keeps calling the activated function
         self.timer = QTimer()
         self.timer.setInterval(10)
-        # self.timer.timeout.connect(self.activate_function)
+        self.timer.timeout.connect(self.activate_function)
         self.timer.start()
 
 		# Show The App
@@ -97,6 +102,18 @@ class main(QMainWindow):
                                 port=DEVICE_PORT,
                                 baudrate=BAUD_RATE
                                 )
+
+
+    def clear_selections(self):
+        self.clear_plot()
+        self.radioButton_1.setChecked(False)
+        self.radioButton_2.setChecked(False)
+        self.radioButton_infrared.setChecked(False)
+        self.radioButton_potentiometer.setChecked(False)
+        self.radioButton_slot.set_checked(False)
+        self.radioButton_ultrasonic.setChecked(False)
+        self.read_write_lock = None
+        self.mode = None
 
 
     def init_data_holders(self):
@@ -128,7 +145,6 @@ class main(QMainWindow):
             self.graphWidget.setBackground(color)
             self.graphWidget.setLabel('left', y_axis_label)
             self.graphWidget.setLabel('bottom', x_axis_label)
-            # self.graphWidget.setXRange(0, x_range, padding=0)
             self.graphWidget.setYRange(0, y_range, padding=0)
             self.graphWidget.showGrid(x=True, y=True)
             self.plot_object = self.graphWidget.plot(self.xdata, self.ydata, pen=pen)
@@ -197,73 +213,97 @@ class main(QMainWindow):
 
 
     def potentiometer_read(self):
-        input = int.from_bytes(self.ser.read(), byteorder="little")
+        input = self.read_input()
         self.ser.flush()
-        input_scaled = input*(5/255)
-        self.update_plot(y_axis_label="voltage (V)", x_axis_label="samples",
-                         x_range=100, y_range=7 ,new_y=input_scaled)
+        if input is not None:
+            input_scaled = input*(5/255)
+            self.update_plot(y_axis_label="voltage (V)", x_axis_label="samples",
+                            x_range=100, y_range=7 ,new_y=input_scaled)
 
 
     # TODO: Fix the scaling
     def ir_read(self):
-        input = int.from_bytes(self.ser.read(), byteorder="little")
+        input = self.read_input()
         self.ser.flush()
-        input_scaled = input*(5/255)
-        self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
-                         x_range=100, y_range=7 ,new_y=input_scaled)
+        if input is not None:
+            input_scaled = input*(5/255)
+            self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
+                            x_range=100, y_range=7 ,new_y=input_scaled)
 
 
     # TODO: Fix the scaling
     def ultrasonic_read(self):
-        input = int.from_bytes(self.ser.read(), byteorder="little")
+        input = self.read_input()
         self.ser.flush()
-        input_scaled = input*(5/255)
-        self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
-                         x_range=100, y_range=7 ,new_y=input_scaled)
+        if input is not None:
+            input_scaled = input*(5/255)
+            self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
+                            x_range=100, y_range=7 ,new_y=input_scaled)
 
 
     # TODO: Fix the scaling
     def slot_read(self):
-        input = int.from_bytes(self.ser.read(), byteorder="little")
+        input = self.read_input()
         self.ser.flush()
-        input_scaled = input*(5/255)
-        self.update_plot(y_axis_label="digital_in", x_axis_label="samples",
-                         x_range=100, y_range=7 ,new_y=input_scaled)
+        if input is not None:
+            input_scaled = input*(5/255)
+            self.update_plot(y_axis_label="digital_in", x_axis_label="samples",
+                            x_range=100, y_range=7 ,new_y=input_scaled)
 
     # TODO: Fix the scaling
     def motor_servo_stepper_read(self):
-        input = int.from_bytes(self.ser.read(), byteorder="little")
+        input = self.read_input()
         self.ser.flush()
-        input_scaled = input*(5/255)
-        #TODO: Pass the right values to each of new_y_*
-        self.update_plot_actuators(new_y_motor=input_scaled, new_y_servo=input_scaled, new_y_stepper=input_scaled)
+        if input is not None:
+            input_scaled = input*(5/255)
+            #TODO: Pass the right values to each of new_y_*
+            self.update_plot_actuators(new_y_motor=input_scaled, new_y_servo=input_scaled, new_y_stepper=input_scaled)
+
+
+    def read_input(self):
+        if self.read_write_lock == "read" and self.ser.in_waiting > 0:
+            data = int.from_bytes(self.ser.read(4), byteorder="little")
+            self.trial_label.setText(("Serial Input: " + str(data)))
+            return data
+        elif self.ser.in_waiting == 0:
+            print("NO INPUT AVAILABLE")
+            self.trial_label.setText("Serial Input: N/A")
+            return None
+        else:
+            return None
 
 
     def motor_write(self):
-        print("Trying motor write")
-        # lock the serial to ensure no serial.read occurs
-        self.read_write_lock = "write"
-        self.ser.write(b'w')
-        write_string = "0," + str(self.motor_slider.value()) + ",0," + "0,"
-        self.ser.write(bytes(write_string))
-        time.sleep(0.05)
-        self.read_write_lock = "read"
+        if self.mode == "Control Actuators":
+            print("Trying motor write")
+            # lock the serial to ensure no serial.read occurs
+            self.read_write_lock = "write"
+            self.ser.write(b'w')
+            time.sleep(0.05)
+            write_string = "0," + str(self.motor_slider.value()) + ",0," + "0,"
+            self.ser.write(bytes(write_string, encoding='utf8'))
+            time.sleep(0.05)
+            self.read_write_lock = "read"
 
     def servo_write(self):
-        self.read_write_lock = "write"
-        self.ser.write(b'w')
-        write_string = "0," + "0," + str(self.motor_slider.value()) + ",0,"
-        self.ser.write(bytes(write_string))
-        time.sleep(0.05)
-        self.read_write_lock = "read"
+        if self.mode == "Control Actuators":
+            self.read_write_lock = "write"
+            self.ser.write(b'w')
+            time.sleep(0.05)
+            write_string = "0," + "0," + str(self.motor_slider.value()) + ",0,"
+            self.ser.write(bytes(write_string, encoding='utf8'))
+            time.sleep(0.05)
+            self.read_write_lock = "read"
 
     def stepper_write(self):
-        self.read_write_lock = "write"
-        self.ser.write(b'w')
-        write_string = "0," + "0," + "0," + str(self.motor_slider.value())
-        self.ser.write(bytes(write_string))
-        time.sleep(0.05)
-        self.read_write_lock = "read"
+        if self.mode == "Control Actuators":
+            self.read_write_lock = "write"
+            self.ser.write(b'w')
+            time.sleep(0.05)
+            write_string = "0," + "0," + "0," + str(self.motor_slider.value())
+            self.ser.write(bytes(write_string, encoding='utf8'))
+            time.sleep(0.05)
+            self.read_write_lock = "read"
 
     # load folder and return list of projects(in sets of 7) to filter
     def test(self):
@@ -289,7 +329,7 @@ class main(QMainWindow):
             self.port_switch("on")
             # request the arduino for data
             self.ser.write(b'r')
-            # wait for it to respong
+            # wait for it to response
             time.sleep(0.05)
 
             # activate the function associated with current button
@@ -325,15 +365,17 @@ class main(QMainWindow):
     # monitor status of radiobutton and accordingly select project/json to load
     def modestate(self,b):
         if b.isChecked():
+            self.read_write_lock == "read"
             self.statusBar_1.showMessage(b.text())
             self.mode = b.text()
-            self.clear_plot()
-            self.port_switch("on")
+            # self.clear_plot()
+            # self.port_switch("on")
 
 
     def sensorstate(self,button):
         if button.isChecked():
-            self.clear_plot()
+            self.read_write_lock == "read"
+            # self.clear_plot()
             self.active_function = button.text()
 
     # function to detect keyboard key press
@@ -344,7 +386,7 @@ class main(QMainWindow):
     # function to save curr proj before closing
     def closeEvent(self, event):
         self.ser.close()
-        print("Closing Tool")
+        print("Closing UI")
         event.accept()
 
 
