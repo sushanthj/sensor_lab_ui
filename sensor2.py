@@ -1,10 +1,5 @@
 import sys
 from PyQt5.uic.uiparser import QtCore
-import cv2
-import qimage2ndarray
-import pathlib
-import itertools
-import json
 from copy import deepcopy
 from scripts import Images
 import numpy as np
@@ -15,8 +10,8 @@ from PyQt5.QtWidgets import *
 import serial
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
-import random
-from ast import literal_eval
+import time
+
 
 DEVICE_PORT = '/dev/ttyACM0'
 BAUD_RATE = 9600
@@ -40,9 +35,9 @@ class main(QMainWindow):
         self.radioButton_slot = self.findChild(QRadioButton, "radioButton_slot")
 
         self.motor_slider = self.findChild(QSlider, "slider_motor")
-        self.motor_servo = self.findChild(QSlider, "slider_servo")
-        self.motor_stepper = self.findChild(QSlider, "slider_stepper")
-        self.motor_stepper.setValue(50)
+        self.servo_slider = self.findChild(QSlider, "slider_servo")
+        self.stepper_slider = self.findChild(QSlider, "slider_stepper")
+        self.stepper_slider.setValue(50)
 
 		# trial stuff
         self.potentiometer_values = [0,100]
@@ -62,7 +57,9 @@ class main(QMainWindow):
         self.radioButton_ultrasonic.toggled.connect(lambda:self.sensorstate(self.radioButton_ultrasonic))
         self.radioButton_slot.toggled.connect(lambda:self.sensorstate(self.radioButton_slot))
 
-        self.motor_slider.sliderReleased.connect(lambda:self.motor_write)
+        self.motor_slider.sliderReleased.connect(lambda:self.motor_write())
+        self.servo_slider.sliderReleased.connect(lambda:self.servo_write())
+        self.stepper_slider.sliderReleased.connect(lambda:self.stepper_write())
 
         # Activate toolbars
         self.pbar = self.findChild(QProgressBar, "progressBar")
@@ -89,7 +86,7 @@ class main(QMainWindow):
         # the de-facto main loop of the program which keeps calling the activated function
         self.timer = QTimer()
         self.timer.setInterval(10)
-        self.timer.timeout.connect(self.activate_function)
+        # self.timer.timeout.connect(self.activate_function)
         self.timer.start()
 
 		# Show The App
@@ -203,10 +200,37 @@ class main(QMainWindow):
         input = int.from_bytes(self.ser.read(), byteorder="little")
         self.ser.flush()
         input_scaled = input*(5/255)
-        self.update_plot(y_axis_label="voltage", x_axis_label="samples",
+        self.update_plot(y_axis_label="voltage (V)", x_axis_label="samples",
                          x_range=100, y_range=7 ,new_y=input_scaled)
 
 
+    # TODO: Fix the scaling
+    def ir_read(self):
+        input = int.from_bytes(self.ser.read(), byteorder="little")
+        self.ser.flush()
+        input_scaled = input*(5/255)
+        self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
+                         x_range=100, y_range=7 ,new_y=input_scaled)
+
+
+    # TODO: Fix the scaling
+    def ultrasonic_read(self):
+        input = int.from_bytes(self.ser.read(), byteorder="little")
+        self.ser.flush()
+        input_scaled = input*(5/255)
+        self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
+                         x_range=100, y_range=7 ,new_y=input_scaled)
+
+
+    # TODO: Fix the scaling
+    def slot_read(self):
+        input = int.from_bytes(self.ser.read(), byteorder="little")
+        self.ser.flush()
+        input_scaled = input*(5/255)
+        self.update_plot(y_axis_label="digital_in", x_axis_label="samples",
+                         x_range=100, y_range=7 ,new_y=input_scaled)
+
+    # TODO: Fix the scaling
     def motor_servo_stepper_read(self):
         input = int.from_bytes(self.ser.read(), byteorder="little")
         self.ser.flush()
@@ -216,13 +240,30 @@ class main(QMainWindow):
 
 
     def motor_write(self):
-        pass
+        print("Trying motor write")
+        # lock the serial to ensure no serial.read occurs
+        self.read_write_lock = "write"
+        self.ser.write(b'w')
+        write_string = "0," + str(self.motor_slider.value()) + ",0," + "0,"
+        self.ser.write(bytes(write_string))
+        time.sleep(0.05)
+        self.read_write_lock = "read"
 
     def servo_write(self):
-        pass
+        self.read_write_lock = "write"
+        self.ser.write(b'w')
+        write_string = "0," + "0," + str(self.motor_slider.value()) + ",0,"
+        self.ser.write(bytes(write_string))
+        time.sleep(0.05)
+        self.read_write_lock = "read"
 
     def stepper_write(self):
-        pass
+        self.read_write_lock = "write"
+        self.ser.write(b'w')
+        write_string = "0," + "0," + "0," + str(self.motor_slider.value())
+        self.ser.write(bytes(write_string))
+        time.sleep(0.05)
+        self.read_write_lock = "read"
 
     # load folder and return list of projects(in sets of 7) to filter
     def test(self):
@@ -246,14 +287,20 @@ class main(QMainWindow):
         """
         if self.mode == "Read Sensor Data" and self.read_write_lock == "read":
             self.port_switch("on")
+            # request the arduino for data
+            self.ser.write(b'r')
+            # wait for it to respong
+            time.sleep(0.05)
+
+            # activate the function associated with current button
             if self.active_function == "Potentiometer":
                 self.potentiometer_read()
             elif self.active_function == "IR":
-                self.ir_calc()
+                self.ir_read()
             elif self.active_function == "Ultrasonic":
-                self.ultrasonic_calc()
+                self.ultrasonic_read()
             elif self.active_function == "Slot":
-                self.slot_calc()
+                self.slot_read()
 
         elif self.mode == "Control Actuators" and self.read_write_lock == "read":
             self.motor_servo_stepper_read()
