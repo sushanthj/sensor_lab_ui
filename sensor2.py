@@ -18,6 +18,11 @@ BAUD_RATE = 9600
 PROJECT_TITLE = 'Sensors and Motors Lab - Team H'
 INPUT_BYTE_SIZE = 4 # seconds
 
+POTENTIOMETER_MAP = (5/255)
+IR_MAP = (5/255)
+ULTRASONIC_MAP = (5/255)
+SLOT_MAP = (1/255)
+
 class main(QMainWindow):
     def __init__(self):
         super(main, self).__init__()
@@ -72,7 +77,6 @@ class main(QMainWindow):
         self.statusBar_1.setFont(QFont('Helvetica',13))
 
         # set defualt mode to Read sensor data (optional)
-        self.mode = "Read Sensor Data"
         # initilaize the Aruduino's Serial Port
         try:
             self.init_serial()
@@ -105,18 +109,16 @@ class main(QMainWindow):
 
 
     def clear_selections(self):
-        self.clear_plot()
-        self.radioButton_1.setChecked(False)
-        self.radioButton_2.setChecked(False)
-        self.radioButton_infrared.setChecked(False)
-        self.radioButton_potentiometer.setChecked(False)
-        self.radioButton_slot.set_checked(False)
-        self.radioButton_ultrasonic.setChecked(False)
         self.read_write_lock = None
         self.mode = None
+        self.port_switch("off")
+        self.port_switch("on")
+        self.clear_plot()
 
 
     def init_data_holders(self):
+        self.mode = "Read Sensor Data"
+        self.read_write_lock = "read"
         self.plot_cache_length = 100
         self.xdata = [0]
         self.ydata = [0]
@@ -216,8 +218,7 @@ class main(QMainWindow):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
-            input = input[0]
-            input_scaled = input*(5/255)
+            input_scaled = input[0]*POTENTIOMETER_MAP
             self.update_plot(y_axis_label="voltage (V)", x_axis_label="samples",
                             x_range=100, y_range=7 ,new_y=input_scaled)
 
@@ -227,7 +228,7 @@ class main(QMainWindow):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
-            input_scaled = input*(5/255)
+            input_scaled = input[1]*IR_MAP
             self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
                             x_range=100, y_range=7 ,new_y=input_scaled)
 
@@ -237,7 +238,7 @@ class main(QMainWindow):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
-            input_scaled = input*(5/255)
+            input_scaled = input[2]*ULTRASONIC_MAP
             self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
                             x_range=100, y_range=7 ,new_y=input_scaled)
 
@@ -247,7 +248,7 @@ class main(QMainWindow):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
-            input_scaled = input*(5/255)
+            input_scaled = input[3]*SLOT_MAP
             self.update_plot(y_axis_label="digital_in", x_axis_label="samples",
                             x_range=100, y_range=7 ,new_y=input_scaled)
 
