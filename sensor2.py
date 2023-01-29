@@ -73,12 +73,12 @@ class main(QMainWindow):
         # set defualt mode to Read sensor data (optional)
         self.mode = "Read Sensor Data"
         # initilaize the Aruduino's Serial Port
-        # try:
-        #     self.init_serial()
-        # except serial.SerialException:
-        #     print("NO ARDUINO DETECTED")
-        #     print("Please connect the Arduino and ensure the Port and Baud Rates are correct")
-        #     exit()
+        try:
+            self.init_serial()
+        except serial.SerialException:
+            print("NO ARDUINO DETECTED")
+            print("Please connect the Arduino and ensure the Port and Baud Rates are correct")
+            exit()
 
         self.active_function = None
 
