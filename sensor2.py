@@ -16,7 +16,7 @@ import time
 DEVICE_PORT = '/dev/ttyACM0'
 BAUD_RATE = 9600
 PROJECT_TITLE = 'Sensors and Motors Lab - Team H'
-RECEIVE_INPUT_WAIT_TIME = 0.05 # seconds
+INPUT_BYTE_SIZE = 4 # seconds
 
 class main(QMainWindow):
     def __init__(self):
@@ -90,7 +90,7 @@ class main(QMainWindow):
 
         # the de-facto main loop of the program which keeps calling the activated function
         self.timer = QTimer()
-        self.timer.setInterval(10)
+        self.timer.setInterval(20)
         self.timer.timeout.connect(self.activate_function)
         self.timer.start()
 
@@ -214,8 +214,9 @@ class main(QMainWindow):
 
     def potentiometer_read(self):
         input = self.read_input()
-        self.ser.flush()
+        self.ser.reset_input_buffer()
         if input is not None:
+            input = input[0]
             input_scaled = input*(5/255)
             self.update_plot(y_axis_label="voltage (V)", x_axis_label="samples",
                             x_range=100, y_range=7 ,new_y=input_scaled)
@@ -224,7 +225,7 @@ class main(QMainWindow):
     # TODO: Fix the scaling
     def ir_read(self):
         input = self.read_input()
-        self.ser.flush()
+        self.ser.reset_input_buffer()
         if input is not None:
             input_scaled = input*(5/255)
             self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
@@ -234,7 +235,7 @@ class main(QMainWindow):
     # TODO: Fix the scaling
     def ultrasonic_read(self):
         input = self.read_input()
-        self.ser.flush()
+        self.ser.reset_input_buffer()
         if input is not None:
             input_scaled = input*(5/255)
             self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
@@ -244,7 +245,7 @@ class main(QMainWindow):
     # TODO: Fix the scaling
     def slot_read(self):
         input = self.read_input()
-        self.ser.flush()
+        self.ser.reset_input_buffer()
         if input is not None:
             input_scaled = input*(5/255)
             self.update_plot(y_axis_label="digital_in", x_axis_label="samples",
@@ -253,7 +254,7 @@ class main(QMainWindow):
     # TODO: Fix the scaling
     def motor_servo_stepper_read(self):
         input = self.read_input()
-        self.ser.flush()
+        self.ser.reset_input_buffer()
         if input is not None:
             input_scaled = input*(5/255)
             #TODO: Pass the right values to each of new_y_*
@@ -262,7 +263,10 @@ class main(QMainWindow):
 
     def read_input(self):
         if self.read_write_lock == "read" and self.ser.in_waiting > 0:
-            data = int.from_bytes(self.ser.read(4), byteorder="little")
+            data = []
+            # read 4 bytes at a time
+            for i in range(INPUT_BYTE_SIZE):
+                data.append(int.from_bytes(self.ser.read(1), byteorder="little"))
             self.trial_label.setText(("Serial Input: " + str(data)))
             return data
         elif self.ser.in_waiting == 0:
@@ -282,7 +286,7 @@ class main(QMainWindow):
             time.sleep(0.05)
             write_string = "0," + str(self.motor_slider.value()) + ",0," + "0,"
             self.ser.write(bytes(write_string, encoding='utf8'))
-            time.sleep(0.05)
+            self.ser.reset_output_buffer()
             self.read_write_lock = "read"
 
     def servo_write(self):
@@ -292,7 +296,7 @@ class main(QMainWindow):
             time.sleep(0.05)
             write_string = "0," + "0," + str(self.motor_slider.value()) + ",0,"
             self.ser.write(bytes(write_string, encoding='utf8'))
-            time.sleep(0.05)
+            self.ser.reset_output_buffer()
             self.read_write_lock = "read"
 
     def stepper_write(self):
@@ -302,7 +306,7 @@ class main(QMainWindow):
             time.sleep(0.05)
             write_string = "0," + "0," + "0," + str(self.motor_slider.value())
             self.ser.write(bytes(write_string, encoding='utf8'))
-            time.sleep(0.05)
+            self.ser.reset_output_buffer()
             self.read_write_lock = "read"
 
     # load folder and return list of projects(in sets of 7) to filter
@@ -330,7 +334,6 @@ class main(QMainWindow):
             # request the arduino for data
             self.ser.write(b'r')
             # wait for it to response
-            time.sleep(0.05)
 
             # activate the function associated with current button
             if self.active_function == "Potentiometer":
@@ -359,7 +362,8 @@ class main(QMainWindow):
         self.graphWidget_servo.clear()
         self.graphWidget_stepper.clear()
         self.init_data_holders()
-        self.ser.flush()
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
 
 
     # monitor status of radiobutton and accordingly select project/json to load
