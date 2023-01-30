@@ -19,7 +19,7 @@ PROJECT_TITLE = 'Sensors and Motors Lab - Team H'
 INPUT_BYTE_SIZE = 4 # seconds
 
 POTENTIOMETER_MAP = (5/255)
-IR_MAP = (5/255)
+IR_MAP = (80/255)
 ULTRASONIC_MAP = (5/255)
 SLOT_MAP = (1/255)
 
@@ -147,7 +147,6 @@ class main(QMainWindow):
             self.graphWidget.setBackground(color)
             self.graphWidget.setLabel('left', y_axis_label)
             self.graphWidget.setLabel('bottom', x_axis_label)
-            self.graphWidget.setYRange(0, y_range, padding=0)
             self.graphWidget.showGrid(x=True, y=True)
             self.plot_object = self.graphWidget.plot(self.xdata, self.ydata, pen=pen)
         else:
@@ -156,6 +155,7 @@ class main(QMainWindow):
                 self.xdata = self.xdata[1:]
                 self.ydata = self.ydata[1:]
 
+            self.graphWidget.setYRange(0, y_range, padding=0)
             self.xdata.append(self.xdata[-1] + 1)  # Add a new value 1 higher than the last.
             self.ydata.append(new_y)  # Add a new vales to end of ydata list
             self.plot_object.setData(self.xdata, self.ydata)
@@ -230,7 +230,7 @@ class main(QMainWindow):
         if input is not None:
             input_scaled = input[1]*IR_MAP
             self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
-                            x_range=100, y_range=7 ,new_y=input_scaled)
+                            x_range=100, y_range=90 ,new_y=input_scaled)
 
 
     # TODO: Fix the scaling
@@ -257,7 +257,7 @@ class main(QMainWindow):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
-            input_scaled = input*(5/255)
+            input_scaled = input[0]*(5/255)
             #TODO: Pass the right values to each of new_y_*
             self.update_plot_actuators(new_y_motor=input_scaled, new_y_servo=input_scaled, new_y_stepper=input_scaled)
 
@@ -271,44 +271,65 @@ class main(QMainWindow):
             self.trial_label.setText(("Serial Input: " + str(data)))
             return data
         elif self.ser.in_waiting == 0:
-            print("NO INPUT AVAILABLE")
-            self.trial_label.setText("Serial Input: N/A")
+            # print("NO INPUT AVAILABLE")
+            # self.trial_label.setText("Serial Input: N/A")
             return None
         else:
             return None
 
+        '''
+        Note: Index and tag used in below functions is according to this mapping:
+
+        send 'r' to read data
+        * Write buffer is a byte array of size four. With the following order of elements:
+        1. Potentiometer reading with mapping (0-255) to (0-5V)
+        2. SharpIR sensor reading with mapping (0-255) to (10cm-80cm)
+        3. Ultrasonic sensor
+        4. Slot Sensor 0 or 255 to indicate ON or OFF
+        send 'w' to write data
+        * Read Buffer is a byte buffer of size seven used to control the actuators:
+        1. which actuator to control: 0 - STOP & RESET everything, 1 - stepper, 2 - servo, 3 - dc motor-position, 4 - dc motor-velocity
+        2. stepper
+        3. servo
+        4. dc-motor - position control - direction
+        5. dc-motor - position control - target position (degrees 0 to 360 0 to -360)
+        6. dc-motor - velocity control - direction
+        7. dc-motor - velocity control - target velocity (rpm)
+        * To just stop the DC motor - send 3 or 4 and target position/velocity = 0
+        '''
+
 
     def motor_write(self):
         if self.mode == "Control Actuators":
-            print("Trying motor write")
-            # lock the serial to ensure no serial.read occurs
-            self.read_write_lock = "write"
-            self.ser.write(b'w')
-            time.sleep(0.05)
-            write_string = "0," + str(self.motor_slider.value()) + ",0," + "0,"
-            self.ser.write(bytes(write_string, encoding='utf8'))
+            self.write_output(data=self.motor_slider.value(), index=3, tag=4)
             self.ser.reset_output_buffer()
             self.read_write_lock = "read"
 
     def servo_write(self):
+        print("")
         if self.mode == "Control Actuators":
-            self.read_write_lock = "write"
-            self.ser.write(b'w')
-            time.sleep(0.05)
-            write_string = "0," + "0," + str(self.motor_slider.value()) + ",0,"
-            self.ser.write(bytes(write_string, encoding='utf8'))
+            self.trial_label.setText("Trying to move servo")
+            self.write_output(data=self.servo_slider.value(), index=2, tag=2)
             self.ser.reset_output_buffer()
             self.read_write_lock = "read"
 
     def stepper_write(self):
         if self.mode == "Control Actuators":
-            self.read_write_lock = "write"
-            self.ser.write(b'w')
-            time.sleep(0.05)
-            write_string = "0," + "0," + "0," + str(self.motor_slider.value())
-            self.ser.write(bytes(write_string, encoding='utf8'))
+            self.write_output(data=self.stepper_slider.value(), index=1, tag=1)
             self.ser.reset_output_buffer()
             self.read_write_lock = "read"
+
+
+    def write_output(self, data, index, tag):
+        self.read_write_lock = "write"
+        self.ser.write(b'w')
+        write_string = ["0","0","0","0","0","0","0"]
+        write_string[0] = str(tag)
+        write_string[index] = str(data)
+        for i in range(7):
+            print(int(write_string[i]))
+            self.ser.write(bytes(write_string[i], encoding='utf8'))
+            # self.ser.write(bytes(int(write_string[i])*4))
 
     # load folder and return list of projects(in sets of 7) to filter
     def test(self):
