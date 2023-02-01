@@ -310,15 +310,15 @@ class main(QMainWindow):
     def motor_write_rpm(self):
         if self.mode == "Control Actuators":
             data = max((self.motor_slider_rpm.value() * 70/100), 20)
-            self.write_output(data=data, index=3, tag=4)
+            self.write_output(data=data, index=6, tag=4)
             self.ser.reset_output_buffer()
             self.read_write_lock = "read"
 
 
     def motor_write_position(self):
         if self.mode == "Control Actuators":
-            data = self.motor_position_delta.text()
-            self.write_output(data=data, index=3, tag=4)
+            data = str(self.motor_position_delta.text())
+            self.write_output(data=data, index=4, tag=3)
             self.ser.reset_output_buffer()
             self.read_write_lock = "read"
 
@@ -331,6 +331,7 @@ class main(QMainWindow):
             self.ser.reset_output_buffer()
             self.read_write_lock = "read"
 
+
     def stepper_write(self):
         if self.mode == "Control Actuators":
             self.write_output(data=self.stepper_slider.value(), index=1, tag=1)
@@ -339,22 +340,39 @@ class main(QMainWindow):
 
 
     def change_direction(self):
-        self.motor_write_rpm(direction=self.direction[-1])
-        time.sleep(2)
         self.direction.reverse()
+        # self.motor_write_rpm(direction=self.direction[-1])
+        # time.sleep(2)
 
 
     def write_output(self, data, index, tag):
-        direction = self.direction
+        """
+        Write output to serial
+        Args:
+            data  : actuator control signal
+            index : index to modify control string
+            tag   : indicator to specify actuator
+        """
+        # tag args
+        # 1 - stepper, 2 - servo, 3 - dc motor-position, 4 - dc motor-velocity
+
         self.read_write_lock = "write"
         self.ser.write(b'w')
-        write_string = ["0","0","0","0","0","0","0"]
+
+        # Build and Modify Control String
+        # string args:  actutor   stepper   servo   pdirection   deltap   vdirec  velocity
+        write_string = [  "0",      "0",     "0",      "0",        "0",     "0",    "0"]
+
         write_string[0] = str(tag)
         write_string[index] = str(data)
+        write_string[3] = self.direction[-1]
+        write_string[5] = self.direction[-1]
+
         for i in range(7):
             print(int(write_string[i]))
             self.ser.write(bytes(write_string[i], encoding='utf8'))
             # self.ser.write(bytes(int(write_string[i])*4))
+
 
     # load folder and return list of projects(in sets of 7) to filter
     def test(self):
@@ -429,10 +447,12 @@ class main(QMainWindow):
             # self.clear_plot()
             self.active_function = button.text()
 
+
     # function to detect keyboard key press
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Right or event.key() == Qt.Key_D:
             pass
+
 
     # function to save curr proj before closing
     def closeEvent(self, event):
