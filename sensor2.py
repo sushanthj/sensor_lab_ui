@@ -43,10 +43,14 @@ class main(QMainWindow):
         self.radioButton_ultrasonic = self.findChild(QRadioButton, "radioButton_ultrasonic")
         self.radioButton_slot = self.findChild(QRadioButton, "radioButton_slot")
 
-        self.motor_slider = self.findChild(QSlider, "slider_motor")
+        self.motor_slider_rpm = self.findChild(QSlider, "slider_motor_rpm")
+        self.motor_slider_position = self.findChild(QSlider, "slider_motor_position")
         self.servo_slider = self.findChild(QSlider, "slider_servo")
         self.stepper_slider = self.findChild(QSlider, "slider_stepper")
         self.stepper_slider.setValue(50)
+
+        self.motor_direction = self.findChild(QPushButton, "pushButton_motor_direction")
+        self.motor_position_delta = self.findChild(QLineEdit, "lineEdit_motor_position")
 
 		# trial stuff
         self.potentiometer_values = [0,100]
@@ -66,9 +70,12 @@ class main(QMainWindow):
         self.radioButton_ultrasonic.toggled.connect(lambda:self.sensorstate(self.radioButton_ultrasonic))
         self.radioButton_slot.toggled.connect(lambda:self.sensorstate(self.radioButton_slot))
 
-        self.motor_slider.sliderReleased.connect(lambda:self.motor_write())
+        self.motor_slider_rpm.sliderReleased.connect(lambda:self.motor_write_rpm())
         self.servo_slider.sliderReleased.connect(lambda:self.servo_write())
         self.stepper_slider.sliderReleased.connect(lambda:self.stepper_write())
+
+        self.motor_direction.clicked.connect(lambda:self.change_direction())
+        self.motor_position_delta.returnPressed.connect(lambda:self.motor_write_position())
 
         # Activate toolbars
         self.pbar = self.findChild(QProgressBar, "progressBar")
@@ -119,6 +126,7 @@ class main(QMainWindow):
     def init_data_holders(self):
         self.mode = "Read Sensor Data"
         self.read_write_lock = "read"
+        self.direction = [0,1]
         self.plot_cache_length = 100
         self.xdata = [0]
         self.ydata = [0]
@@ -299,11 +307,21 @@ class main(QMainWindow):
         '''
 
 
-    def motor_write(self):
+    def motor_write_rpm(self):
         if self.mode == "Control Actuators":
-            self.write_output(data=self.motor_slider.value(), index=3, tag=4)
+            data = max((self.motor_slider_rpm.value() * 70/100), 20)
+            self.write_output(data=data, index=3, tag=4)
             self.ser.reset_output_buffer()
             self.read_write_lock = "read"
+
+
+    def motor_write_position(self):
+        if self.mode == "Control Actuators":
+            data = self.motor_position_delta.text()
+            self.write_output(data=data, index=3, tag=4)
+            self.ser.reset_output_buffer()
+            self.read_write_lock = "read"
+
 
     def servo_write(self):
         print("")
@@ -320,7 +338,14 @@ class main(QMainWindow):
             self.read_write_lock = "read"
 
 
+    def change_direction(self):
+        self.motor_write_rpm(direction=self.direction[-1])
+        time.sleep(2)
+        self.direction.reverse()
+
+
     def write_output(self, data, index, tag):
+        direction = self.direction
         self.read_write_lock = "write"
         self.ser.write(b'w')
         write_string = ["0","0","0","0","0","0","0"]

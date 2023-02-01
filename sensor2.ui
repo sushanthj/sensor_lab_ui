@@ -405,7 +405,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Servo Control</string>
+      <string>Servo Angle Control</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -414,8 +414,8 @@
     <widget class="QLabel" name="label_motor">
      <property name="geometry">
       <rect>
-       <x>160</x>
-       <y>470</y>
+       <x>40</x>
+       <y>460</y>
        <width>181</width>
        <height>41</height>
       </rect>
@@ -428,7 +428,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Motor Control</string>
+      <string>Motor RPM</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -463,10 +463,10 @@
       <set>Qt::AlignCenter</set>
      </property>
     </widget>
-    <widget class="QSlider" name="slider_motor">
+    <widget class="QSlider" name="slider_motor_rpm">
      <property name="geometry">
       <rect>
-       <x>160</x>
+       <x>40</x>
        <y>420</y>
        <width>181</width>
        <height>51</height>
@@ -527,15 +527,70 @@
       <set>Qt::AlignCenter</set>
      </property>
     </widget>
+    <widget class="QLabel" name="label_motor_2">
+     <property name="geometry">
+      <rect>
+       <x>250</x>
+       <y>460</y>
+       <width>181</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>11</pointsize>
+       <weight>50</weight>
+       <bold>false</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Motor Position Delta</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lineEdit_motor_position">
+     <property name="geometry">
+      <rect>
+       <x>260</x>
+       <y>430</y>
+       <width>161</width>
+       <height>31</height>
+      </rect>
+     </property>
+    </widget>
     <zorder>slider_stepper</zorder>
     <zorder>label_motor</zorder>
-    <zorder>slider_motor</zorder>
+    <zorder>slider_motor_rpm</zorder>
     <zorder>label_2</zorder>
     <zorder>label_servo</zorder>
     <zorder>label_3</zorder>
     <zorder>slider_servo</zorder>
     <zorder>label_stepper</zorder>
     <zorder>label_4</zorder>
+    <zorder>label_motor_2</zorder>
+    <zorder>lineEdit_motor_position</zorder>
+   </widget>
+   <widget class="QPushButton" name="pushButton_motor_direction">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>940</y>
+      <width>241</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Reverse Motor Direction</string>
+    </property>
    </widget>
    <zorder>frame</zorder>
    <zorder>verticalFrame</zorder>
@@ -551,6 +606,7 @@
    <zorder>graphWidget_servo</zorder>
    <zorder>graphWidget_stepper</zorder>
    <zorder>label</zorder>
+   <zorder>pushButton_motor_direction</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
