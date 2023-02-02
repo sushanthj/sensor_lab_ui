@@ -46,11 +46,11 @@ class main(QMainWindow):
         self.motor_slider_rpm = self.findChild(QSlider, "slider_motor_rpm")
         self.motor_slider_position = self.findChild(QSlider, "slider_motor_position")
         self.servo_slider = self.findChild(QSlider, "slider_servo")
-        self.stepper_slider = self.findChild(QSlider, "slider_stepper")
-        self.stepper_slider.setValue(50)
+        self.stepper_position = self.findChild(QLineEdit, "lineEdit_stepper_position")
 
         self.motor_direction = self.findChild(QPushButton, "pushButton_motor_direction")
         self.motor_position_delta = self.findChild(QLineEdit, "lineEdit_motor_position")
+        self.all_stop = self.findChild(QPushButton, "pushButton_all_stop")
 
 		# trial stuff
         self.potentiometer_values = [0,100]
@@ -72,10 +72,12 @@ class main(QMainWindow):
 
         self.motor_slider_rpm.sliderReleased.connect(lambda:self.motor_write_rpm())
         self.servo_slider.sliderReleased.connect(lambda:self.servo_write())
-        self.stepper_slider.sliderReleased.connect(lambda:self.stepper_write())
+        self.stepper_position.returnPressed.connect(lambda:self.stepper_write_position())
 
-        self.motor_direction.clicked.connect(lambda:self.change_direction())
+        self.motor_direction.clicked.connect(lambda:self.change_direction(actuator=3))
         self.motor_position_delta.returnPressed.connect(lambda:self.motor_write_position())
+
+        self.all_stop.clicked.connect(lambda:self.write_output())
 
         # Activate toolbars
         self.pbar = self.findChild(QProgressBar, "progressBar")
@@ -280,7 +282,7 @@ class main(QMainWindow):
             return data
         elif self.ser.in_waiting == 0:
             # print("NO INPUT AVAILABLE")
-            # self.trial_label.setText("Serial Input: N/A")
+            self.trial_label.setText("Serial Input: N/A")
             return None
         else:
             return None
@@ -309,7 +311,7 @@ class main(QMainWindow):
 
     def motor_write_rpm(self):
         if self.mode == "Control Actuators":
-            data = max((self.motor_slider_rpm.value() * 70/100), 20)
+            data = int(max((self.motor_slider_rpm.value()), 20))
             self.write_output(data=data, index=6, tag=4)
             self.ser.reset_output_buffer()
             self.read_write_lock = "read"
@@ -327,25 +329,35 @@ class main(QMainWindow):
         print("")
         if self.mode == "Control Actuators":
             self.trial_label.setText("Trying to move servo")
+            # data = max(self.servo_slider.value(),5) * SERVO_MAP
             self.write_output(data=self.servo_slider.value(), index=2, tag=2)
             self.ser.reset_output_buffer()
             self.read_write_lock = "read"
 
 
-    def stepper_write(self):
+    def stepper_write_position(self):
         if self.mode == "Control Actuators":
-            self.write_output(data=self.stepper_slider.value(), index=1, tag=1)
-            self.ser.reset_output_buffer()
-            self.read_write_lock = "read"
+            data=int(self.stepper_position.text())
+            useful_data = min(abs(data),360)
+            if data > 0:
+                self.write_output(data=useful_data, index=1, tag=1)
+                self.ser.reset_output_buffer()
+                self.read_write_lock = "read"
+            else:
+                self.change_direction()
+                self.write_output(data=useful_data, index=1, tag=1)
+                self.ser.reset_output_buffer()
+                self.read_write_lock = "read"
 
 
-    def change_direction(self):
+    def change_direction(self, actuator=1):
         self.direction.reverse()
+        # TODO: call only the necessary function not write_rpm or write_position
         # self.motor_write_rpm(direction=self.direction[-1])
         # time.sleep(2)
 
 
-    def write_output(self, data, index, tag):
+    def write_output(self, data=0, index=0, tag=0):
         """
         Write output to serial
         Args:
@@ -365,14 +377,24 @@ class main(QMainWindow):
 
         write_string[0] = str(tag)
         write_string[index] = str(data)
-        write_string[3] = self.direction[-1]
-        write_string[5] = self.direction[-1]
+        write_string[3] = str(self.direction[-1])
+        write_string[5] = str(self.direction[-1])
+        print(write_string)
 
         for i in range(7):
-            print(int(write_string[i]))
-            self.ser.write(bytes(write_string[i], encoding='utf8'))
+            print(write_string[i])
+            # self.ser.write(bytes(write_string[i], encoding='utf8'))
             # self.ser.write(bytes(int(write_string[i])*4))
+            self.ser.write(self.custom_atoi(write_string[i]))
+            # print(type(self.custom_atoi(write_string[i])))
 
+
+    def custom_atoi(self, str_inp):
+        res = 0
+        for i in range(len(str_inp)):
+            res = res * 10 + (ord(str_inp[i]) - ord('0'))
+
+        return res.to_bytes(1, 'big')
 
     # load folder and return list of projects(in sets of 7) to filter
     def test(self):
