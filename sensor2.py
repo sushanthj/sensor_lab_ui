@@ -421,6 +421,9 @@ class main(QMainWindow):
                 self.slot_read()
 
         elif self.mode == "Control Actuators" and self.read_write_lock == "read":
+            self.port_switch("on")
+            # request the arduino for data
+            self.ser.write(b'r')
             self.motor_servo_stepper_read()
 
 
