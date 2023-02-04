@@ -23,6 +23,10 @@ IR_MAP = (80/255)
 ULTRASONIC_MAP = (5/255)
 SLOT_MAP = (1/255)
 
+STEPPER_MAP = (255/360)
+MOTOR_POSITION_MAP = (255/360)
+MOTOR_RPM_MAP = (255/70)
+
 class main(QMainWindow):
     def __init__(self):
         super(main, self).__init__()
@@ -126,7 +130,7 @@ class main(QMainWindow):
 
 
     def init_data_holders(self):
-        self.mode = "Read Sensor Data"
+        self.mode = None
         self.read_write_lock = "read"
         self.direction = [0,1]
         self.plot_cache_length = 100
@@ -228,41 +232,46 @@ class main(QMainWindow):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
+            self.graphWidget.clear()
+            self.plot_object = None
             input_scaled = input[0]*POTENTIOMETER_MAP
             self.update_plot(y_axis_label="voltage (V)", x_axis_label="samples",
                             x_range=100, y_range=7 ,new_y=input_scaled)
 
 
-    # TODO: Fix the scaling
     def ir_read(self):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
+            self.graphWidget.clear()
+            self.plot_object = None
             input_scaled = input[1]*IR_MAP
             self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
                             x_range=100, y_range=90 ,new_y=input_scaled)
 
 
-    # TODO: Fix the scaling
     def ultrasonic_read(self):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
             input_scaled = input[2]*ULTRASONIC_MAP
+            self.graphWidget.clear()
+            self.plot_object = None
             self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
                             x_range=100, y_range=7 ,new_y=input_scaled)
 
 
-    # TODO: Fix the scaling
     def slot_read(self):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
+            self.graphWidget.clear()
+            self.plot_object = None
             input_scaled = input[3]*SLOT_MAP
             self.update_plot(y_axis_label="digital_in", x_axis_label="samples",
                             x_range=100, y_range=7 ,new_y=input_scaled)
 
-    # TODO: Fix the scaling
+
     def motor_servo_stepper_read(self):
         input = self.read_input()
         self.ser.reset_input_buffer()
@@ -311,7 +320,8 @@ class main(QMainWindow):
 
     def motor_write_rpm(self):
         if self.mode == "Control Actuators":
-            data = int(max((self.motor_slider_rpm.value()), 20))
+            reading = self.motor_slider_rpm.value()
+            data = reading * MOTOR_RPM_MAP
             self.write_output(data=data, index=6, tag=4)
             self.ser.reset_output_buffer()
             self.read_write_lock = "read"
@@ -319,7 +329,8 @@ class main(QMainWindow):
 
     def motor_write_position(self):
         if self.mode == "Control Actuators":
-            data = str(self.motor_position_delta.text())
+            reading = min(abs(int(self.motor_position_delta.text())),360) * MOTOR_POSITION_MAP
+            data = str(reading)
             self.write_output(data=data, index=4, tag=3)
             self.ser.reset_output_buffer()
             self.read_write_lock = "read"
@@ -337,9 +348,11 @@ class main(QMainWindow):
 
     def stepper_write_position(self):
         if self.mode == "Control Actuators":
+            sign = 1
+            if "-" in self.stepper_position.text(): sign = -1
             data=int(self.stepper_position.text())
-            useful_data = min(abs(data),360)
-            if data > 0:
+            useful_data = min(abs(data),360) * STEPPER_MAP
+            if sign == 1:
                 self.write_output(data=useful_data, index=1, tag=1)
                 self.ser.reset_output_buffer()
                 self.read_write_lock = "read"
@@ -383,10 +396,7 @@ class main(QMainWindow):
 
         for i in range(7):
             print(write_string[i])
-            # self.ser.write(bytes(write_string[i], encoding='utf8'))
-            # self.ser.write(bytes(int(write_string[i])*4))
             self.ser.write(self.custom_atoi(write_string[i]))
-            # print(type(self.custom_atoi(write_string[i])))
 
 
     def custom_atoi(self, str_inp):
@@ -395,19 +405,6 @@ class main(QMainWindow):
             res = res * 10 + (ord(str_inp[i]) - ord('0'))
 
         return res.to_bytes(1, 'big')
-
-    # load folder and return list of projects(in sets of 7) to filter
-    def test(self):
-        if self.mode == "Read Sensor Data":
-            print("RECEIVED USER INPUT")
-            self.pbar.setValue(self.potentiometer_values[-1])
-            # self.port_switch("on")
-            input = int.from_bytes(self.ser.read(), byteorder="little")
-            input = input*(5/255)
-            # self.ser.flush()
-            self.trial_label.setText(str(input))
-            # self.ser.write(b'1234')
-            self.potentiometer_values.reverse()
 
 
     def activate_function(self):
