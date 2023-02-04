@@ -426,11 +426,11 @@ class main(QMainWindow):
             # activate the function associated with current button
             if self.active_function == "Potentiometer":
                 self.potentiometer_read()
-            elif self.active_function == "IR":
+            elif self.active_function == "Infrared Sensor":
                 self.ir_read()
-            elif self.active_function == "Ultrasonic":
+            elif self.active_function == "Ultrasonic Sensor":
                 self.ultrasonic_read()
-            elif self.active_function == "Slot":
+            elif self.active_function == "Ambient Light Sensor":
                 self.slot_read()
 
         elif self.mode == "Control Actuators" and self.read_write_lock == "read":
