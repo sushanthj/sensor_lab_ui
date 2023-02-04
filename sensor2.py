@@ -20,7 +20,7 @@ INPUT_BYTE_SIZE = 5 # seconds
 
 POTENTIOMETER_MAP = (5/255)
 IR_MAP = (80/255)
-ULTRASONIC_MAP = (5/255)
+ULTRASONIC_MAP = (60/255)
 SLOT_MAP = (1/255)
 
 STEPPER_MAP = (255/360)
@@ -214,6 +214,8 @@ class main(QMainWindow):
                 self.xdata_stepper = self.xdata_stepper[1:]
                 self.ydata_stepper = self.ydata_stepper[1:]
 
+            self.graphWidget.setYRange(0, 100, padding=0)
+
             # add new data to end of the ydata list
             self.xdata_motor.append(self.xdata_motor[-1] + 1)
             self.xdata_servo.append(self.xdata_servo[-1] + 1)
@@ -251,7 +253,7 @@ class main(QMainWindow):
         if input is not None:
             input_scaled = input[2]*ULTRASONIC_MAP
             self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
-                            x_range=100, y_range=7 ,new_y=input_scaled)
+                            x_range=100, y_range=70 ,new_y=input_scaled)
 
 
     def slot_read(self):
@@ -312,7 +314,7 @@ class main(QMainWindow):
     def motor_write_rpm(self):
         if self.mode == "Control Actuators":
             reading = self.motor_slider_rpm.value()
-            data = reading * MOTOR_RPM_MAP
+            data = int(reading * MOTOR_RPM_MAP)
             self.write_output(data=data, index=6, tag=4)
             self.ser.reset_output_buffer()
             self.read_write_lock = "read"
@@ -320,11 +322,21 @@ class main(QMainWindow):
 
     def motor_write_position(self):
         if self.mode == "Control Actuators":
-            reading = min(abs(int(self.motor_position_delta.text())),360) * MOTOR_POSITION_MAP
-            data = str(reading)
-            self.write_output(data=data, index=4, tag=3)
-            self.ser.reset_output_buffer()
-            self.read_write_lock = "read"
+            sign = 1
+            if "-" in self.motor_position_delta.text():
+                sign = -1
+            reading = int(min(abs(int(self.motor_position_delta.text())),360) * MOTOR_POSITION_MAP)
+            if sign == 1:
+                data = str(reading)
+                self.write_output(data=data, index=4, tag=3)
+                self.ser.reset_output_buffer()
+                self.read_write_lock = "read"
+            else:
+                self.change_direction()
+                data = str(reading)
+                self.write_output(data=data, index=4, tag=3)
+                self.ser.reset_output_buffer()
+                self.read_write_lock = "read"
 
 
     def servo_write(self):
@@ -340,9 +352,10 @@ class main(QMainWindow):
     def stepper_write_position(self):
         if self.mode == "Control Actuators":
             sign = 1
-            if "-" in self.stepper_position.text(): sign = -1
+            if "-" in self.stepper_position.text():
+                sign = -1
             data=int(self.stepper_position.text())
-            useful_data = min(abs(data),360) * STEPPER_MAP
+            useful_data = int(min(abs(data),360) * STEPPER_MAP)
             if sign == 1:
                 self.write_output(data=useful_data, index=1, tag=1)
                 self.ser.reset_output_buffer()
