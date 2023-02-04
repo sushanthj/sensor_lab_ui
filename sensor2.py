@@ -16,7 +16,7 @@ import time
 DEVICE_PORT = '/dev/ttyACM0'
 BAUD_RATE = 9600
 PROJECT_TITLE = 'Sensors and Motors Lab - Team H'
-INPUT_BYTE_SIZE = 4 # seconds
+INPUT_BYTE_SIZE = 5 # seconds
 
 POTENTIOMETER_MAP = (5/255)
 IR_MAP = (80/255)
@@ -99,6 +99,7 @@ class main(QMainWindow):
             exit()
 
         self.active_function = None
+        self.mode = None
 
         self.init_data_holders()
         # set the default mode to read
@@ -122,16 +123,14 @@ class main(QMainWindow):
 
 
     def clear_selections(self):
+        self.graphWidget.clear()
+        self.plot_object = None
+        self.init_data_holders()
         self.read_write_lock = None
-        self.mode = None
-        self.port_switch("off")
-        self.port_switch("on")
-        self.clear_plot()
 
 
     def init_data_holders(self):
-        self.mode = None
-        self.read_write_lock = "read"
+        # self.read_write_lock = "read"
         self.direction = [0,1]
         self.plot_cache_length = 100
         self.xdata = [0]
@@ -232,8 +231,6 @@ class main(QMainWindow):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
-            self.graphWidget.clear()
-            self.plot_object = None
             input_scaled = input[0]*POTENTIOMETER_MAP
             self.update_plot(y_axis_label="voltage (V)", x_axis_label="samples",
                             x_range=100, y_range=7 ,new_y=input_scaled)
@@ -243,8 +240,6 @@ class main(QMainWindow):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
-            self.graphWidget.clear()
-            self.plot_object = None
             input_scaled = input[1]*IR_MAP
             self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
                             x_range=100, y_range=90 ,new_y=input_scaled)
@@ -255,8 +250,6 @@ class main(QMainWindow):
         self.ser.reset_input_buffer()
         if input is not None:
             input_scaled = input[2]*ULTRASONIC_MAP
-            self.graphWidget.clear()
-            self.plot_object = None
             self.update_plot(y_axis_label="distance (cm)", x_axis_label="samples",
                             x_range=100, y_range=7 ,new_y=input_scaled)
 
@@ -265,8 +258,6 @@ class main(QMainWindow):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
-            self.graphWidget.clear()
-            self.plot_object = None
             input_scaled = input[3]*SLOT_MAP
             self.update_plot(y_axis_label="digital_in", x_axis_label="samples",
                             x_range=100, y_range=7 ,new_y=input_scaled)
@@ -276,7 +267,7 @@ class main(QMainWindow):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
-            input_scaled = input[0]*(5/255)
+            input_scaled = input[4]*(5/255)
             #TODO: Pass the right values to each of new_y_*
             self.update_plot_actuators(new_y_motor=input_scaled, new_y_servo=input_scaled, new_y_stepper=input_scaled)
 
@@ -415,9 +406,9 @@ class main(QMainWindow):
         """
         if self.mode == "Read Sensor Data" and self.read_write_lock == "read":
             self.port_switch("on")
+
             # request the arduino for data
             self.ser.write(b'r')
-            # wait for it to response
 
             # activate the function associated with current button
             if self.active_function == "Potentiometer":
@@ -453,7 +444,7 @@ class main(QMainWindow):
     # monitor status of radiobutton and accordingly select project/json to load
     def modestate(self,b):
         if b.isChecked():
-            self.read_write_lock == "read"
+            self.read_write_lock = "read"
             self.statusBar_1.showMessage(b.text())
             self.mode = b.text()
             # self.clear_plot()
@@ -462,8 +453,10 @@ class main(QMainWindow):
 
     def sensorstate(self,button):
         if button.isChecked():
-            self.read_write_lock == "read"
-            # self.clear_plot()
+            self.graphWidget.clear()
+            self.plot_object = None
+            self.init_data_holders()
+            self.read_write_lock = "read"
             self.active_function = button.text()
 
 
