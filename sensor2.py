@@ -81,7 +81,7 @@ class main(QMainWindow):
         self.motor_direction.clicked.connect(lambda:self.change_direction(actuator=3))
         self.motor_position_delta.returnPressed.connect(lambda:self.motor_write_position())
 
-        self.all_stop.clicked.connect(lambda:self.write_output())
+        self.all_stop.clicked.connect(lambda:self.stop_actuators())
 
         # Activate toolbars
         self.pbar = self.findChild(QProgressBar, "progressBar")
@@ -123,8 +123,11 @@ class main(QMainWindow):
 
 
     def clear_selections(self):
+        self.clear_plot()
         self.graphWidget.clear()
+        self.graphWidget_motor.clear()
         self.plot_object = None
+        self.plot_object_motor = None
         self.init_data_holders()
         self.read_write_lock = None
 
@@ -145,21 +148,27 @@ class main(QMainWindow):
         self.plot_object_motor = None
         self.plot_object_servo = None
         self.plot_object_stepper = None
+        self.current_motor_direction = 1
+        self.current_stpper_direction = 1
         self.update_plot(y_axis_label="voltage", x_axis_label="samples",
                          x_range=100, y_range=7 ,new_y=0)
         # self.update_plot_actuators(new_y_motor=0, new_y_servo=0, new_y_stepper=0)
         self.update_plot_actuators2(y_axis_label="RPM", x_axis_label="samples",
                          x_range=100, y_range=50 ,new_y=0)
 
+    def stop_actuators(self):
+        self.clear_plot()
+        self.write_output()
+
 
     def update_plot(self,y_axis_label, x_axis_label, x_range, y_range, new_y):
         color = self.palette().color(QPalette.Window)  # Get the default window background,
         pen = pg.mkPen(color=(255, 0, 0), width=3)
+        self.graphWidget.setLabel('left', y_axis_label)
 
         if self.plot_object is None:
             print("Creating plot object")
             self.graphWidget.setBackground(color)
-            self.graphWidget.setLabel('left', y_axis_label)
             self.graphWidget.setLabel('bottom', x_axis_label)
             self.graphWidget.showGrid(x=True, y=True)
             self.plot_object = self.graphWidget.plot(self.xdata, self.ydata, pen=pen)
@@ -235,12 +244,12 @@ class main(QMainWindow):
     def update_plot_actuators2(self,y_axis_label, x_axis_label, x_range, y_range, new_y):
         color = self.palette().color(QPalette.Window)  # Get the default window background,
         pen = pg.mkPen(color=(255, 0, 0), width=3)
+        self.graphWidget_motor.setLabel('left', y_axis_label)
+        self.graphWidget_motor.setLabel('bottom', x_axis_label)
 
         if self.plot_object_motor is None:
             print("Creating plot object")
             self.graphWidget_motor.setBackground(color)
-            self.graphWidget_motor.setLabel('left', y_axis_label)
-            self.graphWidget_motor.setLabel('bottom', x_axis_label)
             self.graphWidget_motor.showGrid(x=True, y=True)
             self.plot_object_motor = self.graphWidget_motor.plot(self.xdata_motor, self.ydata_motor, pen=pen)
         else:
@@ -293,14 +302,17 @@ class main(QMainWindow):
 
 
     def motor_servo_stepper_read(self):
-        input = self.read_input()
+        # input = self.read_input()
         self.ser.reset_input_buffer()
-        if input is not None:
-            input_scaled = input[4]*(40/255)
-            #TODO: Pass the right values to each of new_y_*
-            # self.update_plot_actuators(new_y_motor=input_scaled, new_y_servo=input_scaled, new_y_stepper=input_scaled)
-            self.update_plot_actuators2(y_axis_label="RPM", x_axis_label="samples",
-                            x_range=100, y_range=50 ,new_y=input_scaled)
+        # if input is not None:
+        #     input_scaled = input[4]*(40/255)
+        #     #TODO: Pass the right values to each of new_y_*
+        #     # self.update_plot_actuators(new_y_motor=input_scaled, new_y_servo=input_scaled, new_y_stepper=input_scaled)
+        #     self.update_plot_actuators2(y_axis_label="RPM", x_axis_label="samples",
+        #                     x_range=100, y_range=50 ,new_y=input_scaled)
+        reading = self.motor_slider_rpm.value()
+        self.update_plot_actuators2(y_axis_label="RPM", x_axis_label="samples",
+                            x_range=100, y_range=60 ,new_y=reading)
 
 
     def read_input(self):
@@ -357,21 +369,25 @@ class main(QMainWindow):
 
     def motor_write_position(self):
         if self.mode == "Control Actuators":
-            sign = 1
+            self.motor_slider_rpm.setValue(0)
+            self.motor_slider_rpm.setTickPosition(0)
+
             if "-" in self.motor_position_delta.text():
-                sign = -1
+                if self.current_motor_direction == 1:
+                    self.current_motor_direction = 0
+                    self.change_direction()
+
+            elif "-" not in self.motor_position_delta.text():
+                if self.current_motor_direction == 0:
+                    self.current_motor_direction = 1
+                    self.change_direction()
+
             reading = int(min(abs(int(self.motor_position_delta.text())),360) * MOTOR_POSITION_MAP)
-            if sign == 1:
-                data = str(reading)
-                self.write_output(data=data, index=4, tag=3)
-                self.ser.reset_output_buffer()
-                self.read_write_lock = "read"
-            else:
-                self.change_direction()
-                data = str(reading)
-                self.write_output(data=data, index=4, tag=3)
-                self.ser.reset_output_buffer()
-                self.read_write_lock = "read"
+
+            data = str(reading)
+            self.write_output(data=data, index=4, tag=3)
+            self.ser.reset_output_buffer()
+            self.read_write_lock = "read"
 
 
     def servo_write(self):
@@ -386,24 +402,28 @@ class main(QMainWindow):
 
     def stepper_write_position(self):
         if self.mode == "Control Actuators":
-            sign = 1
             if "-" in self.stepper_position.text():
-                sign = -1
+                if self.current_stpper_direction == 1:
+                    self.current_stpper_direction = 0
+                    self.change_direction()
+
+
+            elif "-" not in self.stepper_position.text():
+                if self.current_stpper_direction == 0:
+                    self.current_stpper_direction = 1
+                    self.change_direction()
+
+
             data=int(self.stepper_position.text())
             useful_data = int(min(abs(data),360) * STEPPER_MAP)
-            if sign == 1:
-                self.write_output(data=useful_data, index=1, tag=1)
-                self.ser.reset_output_buffer()
-                self.read_write_lock = "read"
-            else:
-                self.change_direction()
-                self.write_output(data=useful_data, index=1, tag=1)
-                self.ser.reset_output_buffer()
-                self.read_write_lock = "read"
 
+            self.write_output(data=useful_data, index=1, tag=1)
+            self.ser.reset_output_buffer()
+            self.read_write_lock = "read"
 
     def change_direction(self, actuator=1):
         self.direction.reverse()
+        self.motor_write_rpm()
         # TODO: call only the necessary function not write_rpm or write_position
         # self.motor_write_rpm(direction=self.direction[-1])
         # time.sleep(2)
@@ -431,10 +451,9 @@ class main(QMainWindow):
         write_string[index] = str(data)
         write_string[3] = str(self.direction[-1])
         write_string[5] = str(self.direction[-1])
-        print(write_string)
+        print("output string", write_string)
 
         for i in range(7):
-            print(write_string[i])
             self.ser.write(self.custom_atoi(write_string[i]))
 
 
