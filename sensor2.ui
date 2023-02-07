@@ -222,8 +222,8 @@
    <widget class="PlotWidget" name="graphWidget_servo">
     <property name="geometry">
      <rect>
-      <x>1750</x>
-      <y>730</y>
+      <x>1760</x>
+      <y>970</y>
       <width>16</width>
       <height>16</height>
      </rect>
@@ -232,8 +232,8 @@
    <widget class="PlotWidget" name="graphWidget_stepper">
     <property name="geometry">
      <rect>
-      <x>1750</x>
-      <y>760</y>
+      <x>1760</x>
+      <y>970</y>
       <width>20</width>
       <height>20</height>
      </rect>
@@ -558,37 +558,6 @@
      <string>Stop All Actuators</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_3">
-    <property name="enabled">
-     <bool>false</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>1750</x>
-      <y>790</y>
-      <width>16</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <weight>50</weight>
-      <bold>false</bold>
-     </font>
-    </property>
-    <property name="frameShape">
-     <enum>QFrame::NoFrame</enum>
-    </property>
-    <property name="midLineWidth">
-     <number>0</number>
-    </property>
-    <property name="text">
-     <string>Servo Reading</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
    <zorder>frame</zorder>
    <zorder>verticalFrame</zorder>
    <zorder>pushButton_clear_graphs</zorder>
@@ -601,7 +570,6 @@
    <zorder>graphWidget_stepper</zorder>
    <zorder>label</zorder>
    <zorder>pushButton_all_stop</zorder>
-   <zorder>label_3</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
