@@ -147,10 +147,11 @@ class main(QMainWindow):
         self.plot_object_stepper = None
         self.update_plot(y_axis_label="voltage", x_axis_label="samples",
                          x_range=100, y_range=7 ,new_y=0)
-        self.update_plot_actuators(new_y_motor=0, new_y_servo=0, new_y_stepper=0)
+        # self.update_plot_actuators(new_y_motor=0, new_y_servo=0, new_y_stepper=0)
+        self.update_plot_actuators2(y_axis_label="RPM", x_axis_label="samples",
+                         x_range=100, y_range=50 ,new_y=0)
 
 
-    #TODO: Remove this function after testing
     def update_plot(self,y_axis_label, x_axis_label, x_range, y_range, new_y):
         color = self.palette().color(QPalette.Window)  # Get the default window background,
         pen = pg.mkPen(color=(255, 0, 0), width=3)
@@ -164,6 +165,7 @@ class main(QMainWindow):
             self.plot_object = self.graphWidget.plot(self.xdata, self.ydata, pen=pen)
         else:
             if len(self.xdata) > self.plot_cache_length and len(self.ydata) > self.plot_cache_length:
+                self.graphWidget.setLabel('left', y_axis_label)
                 # clear graph after reaching max_length
                 self.xdata = self.xdata[1:]
                 self.ydata = self.ydata[1:]
@@ -174,59 +176,84 @@ class main(QMainWindow):
             self.plot_object.setData(self.xdata, self.ydata)
 
 
-    def update_plot_actuators(self, new_y_motor, new_y_servo, new_y_stepper):
+    # def update_plot_actuators(self, new_y_motor, new_y_servo, new_y_stepper):
+    #     color = self.palette().color(QPalette.Window)  # Get the default window background,
+    #     pen = pg.mkPen(color=(255, 0, 0), width=3)
+
+    #     #TODO: Change xdata and ydata
+    #     if self.plot_object_motor is None and self.plot_object_servo is None and self.plot_object_stepper is None:
+    #         print("Creating plot object for motor")
+    #         self.graphWidget_motor.setBackground(color)
+    #         self.graphWidget_motor.setLabel('left', 'RPM')
+    #         self.graphWidget_motor.setLabel('bottom', 'samples')
+    #         self.graphWidget_motor.setYRange(0, 50, padding=0)
+    #         self.graphWidget_motor.showGrid(x=True, y=True)
+    #         self.plot_object_motor = self.graphWidget_motor.plot(self.xdata_motor, self.ydata_motor, pen=pen)
+
+    #         print("Creating plot object for servo")
+    #         self.graphWidget_servo.setBackground(color)
+    #         self.graphWidget_servo.setLabel('left', 'Angle (Degrees)')
+    #         self.graphWidget_servo.setLabel('bottom', 'samples')
+    #         self.graphWidget_servo.setYRange(0, 50, padding=0)
+    #         self.graphWidget_servo.showGrid(x=True, y=True)
+    #         self.plot_object_servo = self.graphWidget_servo.plot(self.xdata_servo, self.ydata_servo, pen=pen)
+
+    #         print("Creating plot object for stepper")
+    #         self.graphWidget_stepper.setBackground(color)
+    #         self.graphWidget_stepper.setLabel('left', 'Angle (Degrees)')
+    #         self.graphWidget_stepper.setLabel('bottom', 'samples')
+    #         self.graphWidget_stepper.setYRange(0, 50, padding=0)
+    #         self.graphWidget_stepper.showGrid(x=True, y=True)
+    #         self.plot_object_stepper = self.graphWidget_stepper.plot(self.xdata_stepper, self.ydata_stepper, pen=pen)
+
+    #     else:
+    #         if len(self.xdata_motor) > self.plot_cache_length:
+    #             # clear graph after reaching max_length
+    #             self.xdata_motor = self.xdata_motor[1:]
+    #             self.ydata_motor = self.ydata_motor[1:]
+    #             self.xdata_servo = self.xdata_servo[1:]
+    #             self.ydata_servo = self.ydata_servo[1:]
+    #             self.xdata_stepper = self.xdata_stepper[1:]
+    #             self.ydata_stepper = self.ydata_stepper[1:]
+
+    #         self.graphWidget.setYRange(0, 50, padding=0)
+
+    #         # add new data to end of the ydata list
+    #         self.xdata_motor.append(self.xdata_motor[-1] + 1)
+    #         self.xdata_servo.append(self.xdata_servo[-1] + 1)
+    #         self.xdata_stepper.append(self.xdata_stepper[-1] + 1)  # Add a new value 1 higher than the last.
+    #         self.ydata_motor.append(new_y_motor)
+    #         self.ydata_servo.append(new_y_servo)
+    #         self.ydata_stepper.append(new_y_stepper)
+
+    #         self.plot_object_motor.setData(self.xdata_motor, self.ydata_motor)
+    #         self.plot_object_servo.setData(self.xdata_servo, self.ydata_servo)
+    #         self.plot_object_stepper.setData(self.xdata_stepper, self.ydata_stepper)
+
+
+    #TODO: Remove this function after testing
+    def update_plot_actuators2(self,y_axis_label, x_axis_label, x_range, y_range, new_y):
         color = self.palette().color(QPalette.Window)  # Get the default window background,
         pen = pg.mkPen(color=(255, 0, 0), width=3)
 
-        #TODO: Change xdata and ydata
-        if self.plot_object_motor is None and self.plot_object_servo is None and self.plot_object_stepper is None:
-            print("Creating plot object for motor")
+        if self.plot_object_motor is None:
+            print("Creating plot object")
             self.graphWidget_motor.setBackground(color)
-            self.graphWidget_motor.setLabel('left', 'RPM')
-            self.graphWidget_motor.setLabel('bottom', 'samples')
-            self.graphWidget_motor.setYRange(0, 100, padding=0)
+            self.graphWidget_motor.setLabel('left', y_axis_label)
+            self.graphWidget_motor.setLabel('bottom', x_axis_label)
             self.graphWidget_motor.showGrid(x=True, y=True)
             self.plot_object_motor = self.graphWidget_motor.plot(self.xdata_motor, self.ydata_motor, pen=pen)
-
-            print("Creating plot object for servo")
-            self.graphWidget_servo.setBackground(color)
-            self.graphWidget_servo.setLabel('left', 'Angle (Degrees)')
-            self.graphWidget_servo.setLabel('bottom', 'samples')
-            self.graphWidget_servo.setYRange(0, 100, padding=0)
-            self.graphWidget_servo.showGrid(x=True, y=True)
-            self.plot_object_servo = self.graphWidget_servo.plot(self.xdata_servo, self.ydata_servo, pen=pen)
-
-            print("Creating plot object for stepper")
-            self.graphWidget_stepper.setBackground(color)
-            self.graphWidget_stepper.setLabel('left', 'Angle (Degrees)')
-            self.graphWidget_stepper.setLabel('bottom', 'samples')
-            self.graphWidget_stepper.setYRange(0, 100, padding=0)
-            self.graphWidget_stepper.showGrid(x=True, y=True)
-            self.plot_object_stepper = self.graphWidget_stepper.plot(self.xdata_stepper, self.ydata_stepper, pen=pen)
-
         else:
-            if len(self.xdata_motor) > self.plot_cache_length:
+            if len(self.xdata_motor) > self.plot_cache_length and len(self.ydata_motor) > self.plot_cache_length:
+                self.graphWidget_motor.setLabel('left', y_axis_label)
                 # clear graph after reaching max_length
                 self.xdata_motor = self.xdata_motor[1:]
                 self.ydata_motor = self.ydata_motor[1:]
-                self.xdata_servo = self.xdata_servo[1:]
-                self.ydata_servo = self.ydata_servo[1:]
-                self.xdata_stepper = self.xdata_stepper[1:]
-                self.ydata_stepper = self.ydata_stepper[1:]
 
-            self.graphWidget.setYRange(0, 100, padding=0)
-
-            # add new data to end of the ydata list
-            self.xdata_motor.append(self.xdata_motor[-1] + 1)
-            self.xdata_servo.append(self.xdata_servo[-1] + 1)
-            self.xdata_stepper.append(self.xdata_stepper[-1] + 1)  # Add a new value 1 higher than the last.
-            self.ydata_motor.append(new_y_motor)
-            self.ydata_servo.append(new_y_servo)
-            self.ydata_stepper.append(new_y_stepper)
-
+            self.graphWidget_motor.setYRange(0, y_range, padding=0)
+            self.xdata_motor.append(self.xdata_motor[-1] + 1)  # Add a new value 1 higher than the last.
+            self.ydata_motor.append(new_y)  # Add a new vales to end of ydata list
             self.plot_object_motor.setData(self.xdata_motor, self.ydata_motor)
-            self.plot_object_servo.setData(self.xdata_servo, self.ydata_servo)
-            self.plot_object_stepper.setData(self.xdata_stepper, self.ydata_stepper)
 
 
     def potentiometer_read(self):
@@ -269,12 +296,20 @@ class main(QMainWindow):
         input = self.read_input()
         self.ser.reset_input_buffer()
         if input is not None:
-            input_scaled = input[4]*(5/255)
+            input_scaled = input[4]*(40/255)
             #TODO: Pass the right values to each of new_y_*
-            self.update_plot_actuators(new_y_motor=input_scaled, new_y_servo=input_scaled, new_y_stepper=input_scaled)
+            # self.update_plot_actuators(new_y_motor=input_scaled, new_y_servo=input_scaled, new_y_stepper=input_scaled)
+            self.update_plot_actuators2(y_axis_label="RPM", x_axis_label="samples",
+                            x_range=100, y_range=50 ,new_y=input_scaled)
 
 
     def read_input(self):
+        """
+        Read Serial Data from Arduino
+        Returns:
+            data : array of length defined by INPUT_BYTE_SIZE containing sensor information
+                   from Arduino
+        """
         if self.read_write_lock == "read" and self.ser.in_waiting > 0:
             data = []
             # read 4 bytes at a time
@@ -404,6 +439,14 @@ class main(QMainWindow):
 
 
     def custom_atoi(self, str_inp):
+        """
+        Convert a string input to a byte
+        Args:
+            str_inp : input string
+
+        Returns:
+            res : string encoded in bytes
+        """
         res = 0
         for i in range(len(str_inp)):
             res = res * 10 + (ord(str_inp[i]) - ord('0'))
